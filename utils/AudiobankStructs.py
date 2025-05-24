@@ -1174,3 +1174,6 @@ def add_padding_to_16(packed_data: bytearray) -> bytearray:
   padding: int = (-len(packed_data)) & 0x0F # or (0x10 - (size % 0x10)) % 0x10
 
   return packed_data + b'\x00' * padding
+
+if __name__ == '__main__':
+  pass
