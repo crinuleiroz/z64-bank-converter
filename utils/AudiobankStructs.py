@@ -1027,7 +1027,7 @@ class AdpcmLoop: # struct size = 0x10 or 0x30
       self.loop_end,
       self.loop_count,
       self.num_samples
-    ) = struct.unpack('>4I', bank_data[loopbook_offset: loopbook_offset + 0x10])
+    ) = struct.unpack('>2I 1i 1I', bank_data[loopbook_offset: loopbook_offset + 0x10])
 
     assert self.loop_count in (0, 0xFFFFFFFF)
 
@@ -1063,7 +1063,7 @@ class AdpcmLoop: # struct size = 0x10 or 0x30
         "field": [
           {"name": "Loop Start", "datatype": "uint32", "ispointer": "0", "isarray": "0", "meaning": "Loop Start", "value": str(self.loop_start)},
           {"name": "Loop End (Sample Length if Count = 0)", "datatype": "uint32", "ispointer": "0", "isarray": "0", "meaning": "Loop End", "value": str(self.loop_end)},
-          {"name": "Loop Count", "datatype": "uint32", "ispointer": "0", "isarray": "0", "meaning": "Loop Count", "defaultval": "-1", "value": str(self.loop_count)},
+          {"name": "Loop Count", "datatype": "int32", "ispointer": "0", "isarray": "0", "meaning": "Loop Count", "defaultval": "-1", "value": str(self.loop_count)},
           {"name": "Number of Samples", "datatype": "uint32", "ispointer": "0", "isarray": "0", "meaning": "None", "value": str(self.num_samples)},
           {"name": "Loopbook", "datatype": "ALADPCMTail", "ispointer": "0", "isarray": "1", "arraylenvar": "HAS_TAIL", "meaning": "Tail Data (if Loop Start != 0)", "element": loopbook_field}
         ]
