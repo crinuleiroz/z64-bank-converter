@@ -1,5 +1,3 @@
-import xml.etree.ElementTree as xml
-
 def parse_abindexentry(element):
   struct_elem = element.find("struct")
   if struct_elem is None:
@@ -137,7 +135,8 @@ def parse_drum(item_elem):
   return drum
 
 def parse_envelope(item_elem):
-  fields = item_elem.findall("field")
+  struct_elem = item_elem.find('struct')
+  fields = struct_elem.findall("field")
 
   if len(fields) % 2 != 0:
     raise ValueError() # Uneven number of points
