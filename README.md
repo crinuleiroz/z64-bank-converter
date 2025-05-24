@@ -2,7 +2,7 @@
 This is a WIP rewrite of a bin to xml script that converts binary banks to xml banks. The rewrite aims to improve code, and to allow others to easily use or modify it.
 
 ## What it Does
-This code takes a binary bank and bankmeta file for the Nintendo 64 Zelda games and turns it into a SEQ64 XML file, and vice versa (untested).
+This code takes a binary bank and bankmeta file for the Nintendo 64 Zelda games and turns it into a SEQ64 XML file, and vice versa.
 
 ### To-Do
 - [x] Parse binary instrument bank and all of its information
