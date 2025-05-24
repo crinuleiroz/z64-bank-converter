@@ -271,7 +271,7 @@ class Audiobank:
 
     abbank_elem = bank_elem.find('abbank')
     if abbank_elem is not None:
-      data = parse_abbank(abbank_elem.find('struct'))
+      data = parse_abbank(abbank_elem)
       self.instrument_index_map = [entry['index'] for entry in data['instrument_list']]
 
     drumlist_elem = bank_elem.find('drumlist')
@@ -846,7 +846,7 @@ class Envelope:
 
   @property
   def struct_size(self) -> int:
-    return add_padding_to_16(len(self.points) * 4)
+    return align_to_16(len(self.points) * 4)
 
 class Sample: # struct size = 0x10
   def __init__(self):
@@ -1037,7 +1037,7 @@ class AdpcmLoop: # struct size = 0x10 or 0x30
     self.loop_count  = data['loop_count']
     self.num_samples = data['num_samples']
 
-    self.predictor_array = data.get('predictor_array') or []
+    self.predictor_array = data.get('predictor_array', [])
 
     return self
 
