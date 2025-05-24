@@ -2,7 +2,6 @@ import struct
 from enum import IntEnum
 from itertools import islice
 
-import xml.etree.ElementTree as ET
 from utils.XMLParser import *
 
 class AudioSampleCodec(IntEnum):
@@ -59,7 +58,7 @@ class Bankmeta:
     )
 
   @classmethod
-  def from_xml(cls, bank_elem: xml.ElementTree):
+  def from_xml(cls, bank_elem):
     self = cls()
     fields = bank_elem.find('abindexentry/struct').findall('field')
 
@@ -301,10 +300,10 @@ class Audiobank:
       size = align_to_16(len(codebook_bytes))
       binary_data[codebook.offset:codebook.offset + size] = add_padding_to_16(codebook_bytes)
 
-    return bytes(binary_data)
+    return bytes(add_padding_to_16(binary_data))
 
   @classmethod
-  def from_xml(cls, bankmeta: Bankmeta, bank_elem: xml.ElementTree):
+  def from_xml(cls, bankmeta: Bankmeta, bank_elem):
     self = cls()
     self.bankmeta = bankmeta
     self.bank_xml = bank_elem
@@ -852,7 +851,7 @@ class Envelope:
       self.points.append((delay, arg))
       i += 4
 
-      if delay < 0 and arg >= 0:
+      if delay < 0:
         break
 
     envelope_registry[envelope_offset] = self
@@ -1085,7 +1084,7 @@ class AdpcmLoop: # struct size = 0x10 or 0x30
     return self
 
   def to_bytes(self) -> bytes:
-    raw = struct.pack('>4I', self.loop_start, self.loop_end, self.loop_count, self.num_samples)
+    raw = struct.pack('>2I 1i 1I', self.loop_start, self.loop_end, self.loop_count, self.num_samples)
 
     if self.loop_count != 0:
       raw += struct.pack('>16h', *self.predictor_array)
