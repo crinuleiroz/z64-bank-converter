@@ -627,14 +627,14 @@ class Sample: # struct size = 0x10
       "struct": {"name": "ABSample",
         # Leave this comment formatted as-is, it adds a nice prettified comment to each sample item explaining the bitfield
         "__comment__": f"""
-          Below are the bitfield values for each bit they represent.
-          Each of these values takes up a specific amount of the 32 bits representing the u32 value.
-           1 Bit(s): Unk_0       (Bit(s) 1):    {self.unk_0}
-           3 Bit(s): Codec       (Bit(s) 2-4):  {AudioSampleCodec(self.codec).name} ({self.codec})
-           2 Bit(s): Medium      (Bit(s) 5-6):  {AudioStorageMedium(self.medium).name} ({self.medium})
-           1 Bit(s): Cached      (Bit(s) 7):    {bool(self.is_cached)} ({self.is_cached})
-           1 Bit(s): Relocated   (Bit(s) 8):    {bool(self.is_relocated)} ({self.is_relocated})
-          24 Bit(s): Binary size (Bit(s) 9-32): {self.size}
+            Below are the bitfield values for each bit they represent.
+            Each of these values takes up a specific amount of the 32 bits representing the u32 value.
+             1 Bit(s): Unk_0       (Bit(s) 1):    {self.unk_0}
+             3 Bit(s): Codec       (Bit(s) 2-4):  {AudioSampleCodec(self.codec).name} ({self.codec})
+             2 Bit(s): Medium      (Bit(s) 5-6):  {AudioStorageMedium(self.medium).name} ({self.medium})
+             1 Bit(s): Cached      (Bit(s) 7):    {bool(self.is_cached)} ({self.is_cached})
+             1 Bit(s): Relocated   (Bit(s) 8):    {bool(self.is_relocated)} ({self.is_relocated})
+            24 Bit(s): Binary size (Bit(s) 9-32): {self.size}
         """,
         "field": [
           {"name": "Bitfield", "datatype": "uint32", "ispointer": "0", "isarray": "0", "meaning": "None", "value": str(self.bits)},
@@ -1174,6 +1174,3 @@ def add_padding_to_16(packed_data: bytearray) -> bytearray:
   padding: int = (-len(packed_data)) & 0x0F # or (0x10 - (size % 0x10)) % 0x10
 
   return packed_data + b'\x00' * padding
-
-if __name__ == '__main__':
-  pass
