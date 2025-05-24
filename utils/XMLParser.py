@@ -237,9 +237,9 @@ def parse_loopbook(item_elem):
       raise ValueError() # Should have tail data
 
     data_field = predictors_elem.find("struct").find("field")
-    data_values = [int(el.attrib["value"]) for el in data_field.findall("element")]
+    tail_data = [int(el.attrib["value"]) for el in data_field.findall("element")]
 
-    if len(data_values) != 16:
+    if len(tail_data) != 16:
       raise ValueError() # Not enough predictor coefficients
 
   return {
