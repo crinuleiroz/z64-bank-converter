@@ -288,12 +288,12 @@ def create_binary_bank(filename: str, bankmeta: object, audiobank: object) -> No
 |- Main Function -|
 '''
 def main() -> None:
+  filename = os.path.basename(os.path.splitext(sys.argv[1])[0])
+
   # This is temporary until I add proper file checking
   ''' From binary zbank and bankmeta '''
   # bank_bin     = sys.argv[1]
   # bankmeta_bin = sys.argv[2]
-
-  filename = os.path.basename(os.path.splitext(sys.argv[1])[0])
 
   # bank_data     = read_binary(bank_bin)
   # bankmeta_data = read_binary(bankmeta_bin)
