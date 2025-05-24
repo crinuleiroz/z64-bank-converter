@@ -274,23 +274,45 @@ def create_xml_bank(filename: str, bankmeta: object, audiobank: object) -> None:
     f.write(xml.tostring(xml_comment) + b'\n')
     xml_tree.write(f, encoding='utf-8', xml_declaration=False)
 
+def create_binary_bank(filename: str, bankmeta: object, audiobank: object) -> None:
+  bankmeta_bytes = bankmeta.to_bytes()
+  bank_bytes = audiobank.to_bytes()
+
+  with open(f'{filename}_{DATE_FILENAME}.bankmeta', 'wb') as bankmeta:
+    bankmeta.write(bankmeta_bytes)
+
+  with open(f'{filename}_{DATE_FILENAME}.zbank', 'wb') as bank:
+    bank.write(bank_bytes)
+
 '''
 |- Main Function -|
 '''
 def main() -> None:
   # This is temporary until I add proper file checking
-  bank_bin     = sys.argv[1]
-  bankmeta_bin = sys.argv[2]
+  ''' From binary zbank and bankmeta '''
+  # bank_bin     = sys.argv[1]
+  # bankmeta_bin = sys.argv[2]
 
   filename = os.path.basename(os.path.splitext(sys.argv[1])[0])
 
-  bank_data     = read_binary(bank_bin)
-  bankmeta_data = read_binary(bankmeta_bin)
+  # bank_data     = read_binary(bank_bin)
+  # bankmeta_data = read_binary(bankmeta_bin)
 
-  bankmeta  = Bankmeta.from_bytes(bankmeta_data)
-  audiobank = Audiobank.from_bytes(bankmeta, bank_data)
+  # bankmeta  = Bankmeta.from_bytes(bankmeta_data)
+  # audiobank = Audiobank.from_bytes(bankmeta, bank_data)
 
-  create_xml_bank(filename, bankmeta, audiobank)
+  # create_xml_bank(filename, bankmeta, audiobank)
+
+  ''' From XML '''
+  xml_file = sys.argv[1]
+  tree = xml.parse(xml_file)
+
+  bank_element = tree.getroot()
+
+  bankmeta = Bankmeta.from_xml(bank_element)
+  audiobank = Audiobank.from_xml(bankmeta, bank_element)
+
+  create_binary_bank(filename, bankmeta, audiobank)
 
 if __name__ == '__main__':
   main()
