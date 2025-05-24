@@ -176,97 +176,132 @@ class Audiobank:
     return self
 
   def to_bytes(self):
-    abbank_size   = align_to_16(0x08 + (0x04 * self.bankmeta.num_instruments))
-    drumlist_size = align_to_16(0x04 * self.bankmeta.num_drums)
+    offset = 0
 
-    abbank_offset      = 0x00000000
-    drumlist_offset    = abbank_offset + abbank_size
-    # sfxlist here eventually
-    instruments_offset = drumlist_offset + drumlist_size
-    instruments_size   = align_to_16(0x20 * self.bankmeta.num_instruments)
-    drums_offset       = instruments_offset + instruments_size
-    drums_size         = align_to_16(0x10 * self.bankmeta.num_drums)
-    samples_offset     = drums_offset + drums_size
-    samples_size       = align_to_16(0x10 * len(self.sample_registry))
-    envelopes_offset   = samples_offset + samples_size
+    # ABBANK Table
+    abbank_data = bytearray()
+    abbank_data += struct.pack('>2I', 0, 0) # temp
+    for index in self.instrument_index_map:
+      abbank_data += struct.pack('>I', 0) # temp
 
+    abbank_size = align_to_16(len(abbank_data))
+    abbank_offset = offset
+    offset += abbank_size
+
+    # DRUMLIST Table
+    drumlist_data = bytearray()
+    for index in self.drum_index_map:
+      drumlist_data += struct.pack('>I', 0) # temp
+
+    drumlist_size = align_to_16(len(drumlist_data))
+    drumlist_offset = offset
+    offset += drumlist_size
+
+    # Update drumlist offset
+    abbank_data[0:4] = struct.pack('>I', drumlist_offset)
+
+    # INSTRUMENTS
+    instruments_offset = offset
     for i, instrument in enumerate(self.instruments):
-      if instrument is not None:
-        instrument.offset = instruments_offset + (0x20 * i)
+      instrument.offset = offset
+      offset += 0x20
 
+    instruments_size = offset - instruments_offset
+
+    # DRUMS
+    drums_offset = offset
     for i, drum in enumerate(self.drums):
-      if drum is not None:
-        drum.offset = drums_offset + (0x10 * i)
+      drum.offset = offset
+      offset += 0x10
 
-    for i, sample in enumerate(self.sample_registry.values()):
-      sample.offset = samples_offset + (0x10 * i)
+    drums_size = offset - drums_offset
 
-    offset = envelopes_offset
+    # SAMPLES
+    samples_offset = offset
+    for sample in self.sample_registry.values():
+      sample.offset = offset
+      offset += 0x10
+
+    samples_size = offset - samples_offset
+
+    # ENVELOPES
+    envelopes_offset = offset
     for envelope in self.envelope_registry.values():
       envelope.offset = offset
-      offset += envelope.struct_size
+      size = align_to_16(len(envelope.to_bytes()))
+      offset += size
 
-    for loop in self.loopbook_registry.values():
-      loop.offset = offset
-      offset += loop.struct_size
+    envelopes_size = offset - envelopes_offset
 
-    for book in self.codebook_registry.values():
-      book.offset = offset
-      offset += book.struct_size
+    # LOOPBOOKS
+    loopbooks_offset = offset
+    for loopbook in self.loopbook_registry.values():
+      loopbook.offset = offset
+      size = align_to_16(len(loopbook.to_bytes()))
+      offset += size
+
+    loopbooks_size = offset - loopbooks_offset
+
+    # CODEBOOKS
+    codebooks_offset = offset
+    for codebook in self.codebook_registry.values():
+      codebook.offset = offset
+      size = align_to_16(len(codebook.to_bytes()))
+      offset += size
+
+    codebooks_size = offset - codebooks_offset
+
+    total_size = align_to_16(offset)
 
     self.update_internal_offsets()
 
-    abbank_pointer_table = []
-    for index in self.instrument_index_map:
-      if index == -1 or index >= len(self.instruments) or self.instruments[index] is None:
-        abbank_pointer_table.append(0)
-      else:
-        abbank_pointer_table.append(self.instruments[index].offset)
+    # WRITE TO BINARY
+    binary_data = bytearray(total_size)
 
-    drum_pointer_table = []
-    for index in self.drum_index_map:
-      if index == -1 or index >= len(self.drums) or self.drums[index] is None:
-        drum_pointer_table.append(0)
-      else:
-        drum_pointer_table.append(self.drums[index].offset)
+    binary_data[abbank_offset:abbank_offset + abbank_size] = add_padding_to_16(abbank_data)
+    binary_data[drumlist_offset:drumlist_offset + drumlist_size] = add_padding_to_16(drumlist_data)
 
-    # All offsets should be calculated
-    # Build the table data
-    abbank_data = bytearray()
-    abbank_data += struct.pack('>2I', drumlist_offset, 0) # second value is sfxlist pointer
-    for ptr in abbank_pointer_table:
-      abbank_data += struct.pack('>I', ptr)
+    for i, index in enumerate(self.instrument_index_map):
+      if index != -1 and 0 <= index < len(self.instruments) and self.instruments[index] is not None:
+        abbank_data[8 + i * 4:8 + (i + 1) * 4] = struct.pack('>I', self.instruments[index].offset)
 
-    drumlist_data = bytearray()
-    for ptr in drum_pointer_table:
-      drumlist_data += struct.pack('>I', ptr)
+    for i, index in enumerate(self.drum_index_map):
+      if index != -1 and 0 <= index < len(self.drums) and self.drums[index] is not None:
+        drumlist_data[i * 4:i * 4 + 4] = struct.pack('>I', self.drums[index].offset)
 
-    # Build the entire binary
-    binary_data = bytearray()
-    binary_data += add_padding_to_16(abbank_data)
-    binary_data += add_padding_to_16(drumlist_data)
+    binary_data[abbank_offset:abbank_offset + len(abbank_data)] = add_padding_to_16(abbank_data)
+    binary_data[drumlist_offset:drumlist_offset + len(drumlist_data)] = add_padding_to_16(drumlist_data)
 
     for instrument in self.instruments:
-      if instrument:
-        binary_data += instrument.to_bytes()
+      if instrument is not None:
+        inst_bytes = instrument.to_bytes()
+        binary_data[instrument.offset:instrument.offset + 0x20] = inst_bytes
 
     for drum in self.drums:
-      if drum:
-        binary_data += drum.to_bytes()
+      if drum is not None:
+        drum_bytes = drum.to_bytes()
+        binary_data[drum.offset:drum.offset + 0x10] = drum_bytes
 
     for sample in self.sample_registry.values():
-      binary_data += sample.to_bytes()
+      sample_bytes = sample.to_bytes()
+      binary_data[sample.offset:sample.offset + 0x10] = sample_bytes
 
     for envelope in self.envelope_registry.values():
-      binary_data += envelope.to_bytes()
+      envelope_bytes = envelope.to_bytes()
+      size = align_to_16(len(envelope_bytes))
+      binary_data[envelope.offset:envelope.offset + size] = add_padding_to_16(envelope_bytes)
 
     for loopbook in self.loopbook_registry.values():
-      binary_data += loopbook.to_bytes()
+      loopbook_bytes = loopbook.to_bytes()
+      size = align_to_16(len(loopbook_bytes))
+      binary_data[loopbook.offset:loopbook.offset + size] = add_padding_to_16(loopbook_bytes)
 
     for codebook in self.codebook_registry.values():
-      binary_data += codebook.to_bytes()
+      codebook_bytes = codebook.to_bytes()
+      size = align_to_16(len(codebook_bytes))
+      binary_data[codebook.offset:codebook.offset + size] = add_padding_to_16(codebook_bytes)
 
-    return bytes(add_padding_to_16(binary_data))
+    return bytes(binary_data)
 
   @classmethod
   def from_xml(cls, bankmeta: Bankmeta, bank_elem: xml.ElementTree):
@@ -283,7 +318,7 @@ class Audiobank:
       data = parse_abbank(abbank_elem)
       self.instrument_index_map = [entry['index'] for entry in data['instrument_list']]
 
-    drumlist_elem = bank_elem.find('drumlist')
+    drumlist_elem = bank_elem.find('abdrumlist')
     if drumlist_elem is not None:
       data = parse_drumlist(drumlist_elem)
       self.drum_index_map = [entry['index'] for entry in data]
