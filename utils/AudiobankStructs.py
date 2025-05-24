@@ -504,6 +504,10 @@ class Audiobank:
       if sample.codebook:
         sample.codebook_offset = sample.codebook.offset
 
+
+'''
+|- Structs -|
+'''
 class Instrument: # struct size = 0x20
   def __init__(self):
     self.offset = 0
@@ -647,7 +651,7 @@ class Instrument: # struct size = 0x20
       self.prim_sample_tuning,
       self.high_sample_offset,
       self.high_sample_tuning
-    ) # size = 0x20
+    )
 
 class Drum: # struct size = 0x10
   def __init__(self):
@@ -732,6 +736,17 @@ class Drum: # struct size = 0x10
 
     return self
 
+  def to_bytes(self) -> bytes:
+    return struct.pack(
+      '>3B 1x 1I1f 1I',
+      self.decay_index,
+      self.pan,
+      self.is_relocated,
+      self.sample_offset,
+      self.sample_tuning,
+      self.envelope_offset
+    )
+
 class SoundEffect:
   def __init__(self):
     self.offset = 0
@@ -768,6 +783,9 @@ class SoundEffect:
         ]
       }
     }
+
+  def to_bytes(self):
+    return struct.pack('>1I1f', self.sample_offset, self.sample_tuning)
 
 class Envelope:
   def __init__(self):
@@ -816,6 +834,15 @@ class Envelope:
 
     self.points = [(p['delay'], p['arg']) for p in points]
     return self
+
+  def to_bytes(self) -> bytes:
+    flat_values = []
+    for delay, arg in self.points:
+      flat_values.extend([delay, arg])
+
+    raw = struct.pack('>' + 'h' * len(flat_values), * flat_values)
+
+    return add_padding_to_16(raw)
 
   @property
   def struct_size(self) -> int:
@@ -915,10 +942,23 @@ class Sample: # struct size = 0x10
     self.size         = data['size']
     self.table_offset = data['sample_pointer']
 
-    self.loopbook = None # placeholder
-    self.codebook = None # placeholder
+    self.loopbook = loopbook_registry[data['loop']]
+    self.codebook = codebook_registry[data['book']]
 
     return self
+
+  def to_bytes(self) -> bytes:
+    bits  = 0
+    bits |= (self.unk_0 & 0b1) << 31
+    bits |= (self.codec & 0b111) << 28
+    bits |= (self.medium & 0b11) << 26
+    bits |= (self.is_cached & 1) << 25
+    bits |= (self.is_relocated & 1) << 24
+    bits |= (self.size & 0b111111111111111111111111)
+
+    raw = struct.pack('>4I', bits, self.table_offset, self.loopbook_offset, self.codebook_offset)
+
+    return add_padding_to_16(raw)
 
 class AdpcmLoop: # struct size = 0x10 or 0x30
   def __init__(self):
@@ -1001,6 +1041,14 @@ class AdpcmLoop: # struct size = 0x10 or 0x30
 
     return self
 
+  def to_bytes(self) -> bytes:
+    raw = struct.pack('>4I', self.loop_start, self.loop_end, self.loop_count, self.num_samples)
+
+    if self.loop_count != 0:
+      raw += struct.pack('>16h', *self.predictor_array)
+
+    return add_padding_to_16(raw)
+
   @property
   def struct_size(self) -> int:
     base = 0x10
@@ -1080,396 +1128,19 @@ class AdpcmBook: # struct size = 0x8 + (0x08 * order * num_predictors)
 
     return self
 
+  def to_bytes(self) -> bytes:
+    raw = struct.pack('>2i', self.order, self.num_predictors)
+    for array in self.predictor_arrays:
+      if len(array) != 16:
+        raise ValueError() # Too few prediction coefficients in the array
+
+      raw += struct.pack('>16h', *array)
+
+    return add_padding_to_16(raw)
+
   @property
   def struct_size(self) -> int:
     return align_to_16(8 + (8 * self.order * self.num_predictors))
-
-'''
-|- Structs -|
-'''
-# class EnvelopePoint:
-#   ''' Represents a single point of an envelope array '''
-#   def __init__(self, delay: int, arg: int):
-#     self.delay = delay
-#     self.arg = arg
-
-#     assert 0 <= self.arg <= 32767 or self.delay < 0
-
-#   @classmethod
-#   def from_bytes(cls, data: bytes):
-#     delay, arg = struct.unpack('>2h', data[:0x04])
-#     return cls(delay, arg)
-
-#   def to_bytes(self) -> bytes:
-#     return struct.pack('>2h', self.delay, self.arg)
-
-# class Envelope:
-#   ''' Represents an envelope array in OOT and MM '''
-#   def __init__(self, points = None):
-#     self.points = points or []
-
-#   @classmethod
-#   def from_bytes(cls, data: bytearray):
-#     points = []
-#     index = 0
-#     while index + 4 <= len(data):
-#       point = EnvelopePoint.from_bytes(data[index:index + 4])
-#       points.append(point)
-#       index += 4
-
-#       if point.delay < 0 and point.arg >= 0:
-#         break
-
-#     return cls(points)
-
-#   def to_dict(self) -> dict:
-#     return {'points': [{'delay': p.delay, 'arg': p.arg} for p in self.points]}
-
-#   @classmethod
-#   def from_dict(cls, data: dict):
-#     points = [EnvelopePoint(p['delay'], p['arg']) for p in data['points']]
-#     return cls(points)
-
-#   def to_bytes(self) -> bytes:
-#     raw = b''.join(p.to_bytes() for p in self.points)
-#     return add_padding_to_16(raw)
-
-#   @property
-#   def delay(self):
-#     return [p.delay for p in self.points]
-
-#   @property
-#   def arg(self):
-#     return [p.arg for p in self.points]
-
-#   @property
-#   def struct_size(self) -> int:
-#     return add_padding_to_16(len(self.points) * 4)
-
-# class AdpcmLoop:
-#   def __init__(self, start: int, end: int, count: int, num_samples: int, predictors = None):
-#     self.start = start
-#     self.end = end
-#     self.count = count
-#     self.num_samples = num_samples
-
-#     assert self.count in (0, 0xFFFFFFFF)
-
-#     if self.count != 0:
-#       if predictors is None:
-#         raise ValueError()
-
-#       assert len(predictors) == 16
-#       self.predictors = tuple(predictors)
-
-#     else:
-#       assert self.start == 0
-#       self.predictors = tuple([0] * 16)
-
-#   @classmethod
-#   def from_bytes(cls, data: bytes):
-#     start, end, count, num_samples = struct.unpack('>4I', data[:0x10])
-
-#     if count != 0:
-#       predictors = struct.unpack('>16h', data[0x10:0x30])
-#     else:
-#       predictors = [0] * 16
-
-#     return cls(start, end, count, num_samples, predictors)
-
-#   def to_dict(self) -> dict:
-#     return {
-#       'loop_start': self.start,
-#       'loop_end': self.end,
-#       'num_samples': self.num_samples,
-#       'predictors': list(self.predictors)
-#     }
-
-#   @classmethod
-#   def from_dict(cls, data: dict):
-#     return cls(
-#       start = data['loop_start'],
-#       end = data['loop_end'],
-#       count = data['loop_count'],
-#       samples = data['num_samples'],
-#       predictors = data.get('predictors')
-#     )
-
-#   def to_bytes(self) -> bytes:
-#     raw = struct.pack('>4I', self.start, self.end, self.count, self.num_samples)
-
-#     if self.count != 0:
-#       raw += struct.pack('>16h', *self.predictors)
-
-#     return add_padding_to_16(raw)
-
-#   @property
-#   def struct_size(self) -> int:
-#     base = 0x10
-#     return align_to_16(base + (0x20 if self.count != 0 else 0))
-
-# class AdpcmBook:
-#   def __init__(self, order: int, num_predictors: int, predictors: list[list[int]]):
-#     self.order = order
-#     self.num_predictors = num_predictors
-#     self.predictors = predictors
-
-#     assert self.order == 2 # Order should always be 2
-
-#     if num_predictors != 0:
-#       if len(predictors) != num_predictors:
-#         raise ValueError() # Number of arrays must match
-
-#       for array in predictors:
-#         if len(array) != 16:
-#           raise ValueError() # Too few prediction coefficients in the array
-
-#   @classmethod
-#   def from_bytes(cls, data: bytes):
-#     order, num_predictors = struct.unpack('>2i', data[:0x08])
-#     predictor_data = data[0x08:]
-
-#     array_iter = struct.iter_unpack('>16h', predictor_data)
-#     predictors = [list(p) for p in zip(range(num_predictors), array_iter)]
-
-#     return cls(order, num_predictors, predictors)
-
-#   def to_dict(self) -> dict:
-#     return {
-#       'order': self.order,
-#       'num_predictors': self.num_predictors,
-#       'predictors': self.predictors
-#     }
-
-#   @classmethod
-#   def from_dict(cls, data: dict):
-#     return cls(
-#       order = data['order'],
-#       num_predictors = data['num_predictors'],
-#       predictors = data['predictors']
-#     )
-
-#   def to_bytes(self) -> bytes:
-#     raw = struct.pack('>2i', self.order, self.num_predictors)
-#     for array in self.predictors:
-#       if len(array) != 16:
-#         raise ValueError() # Too few prediction coefficients in the array
-
-#       raw += struct.pack('>16h', *array)
-
-#     return add_padding_to_16(raw)
-
-#   @property
-#   def struct_size(self) -> int:
-#     return align_to_16(8 + (8 * self.order * self.num_predictors))
-
-# class Sample:
-#   def __init__(self, unk_0: int, codec: int, medium: int, is_cached: int, is_relocated: int, size: int, sample_pointer: int, loop: int, book: int):
-#     self.unk_0 = unk_0
-#     self.codec = codec
-#     self.medium = medium
-#     self.is_cached = is_cached
-#     self.is_relocated = is_relocated
-#     self.size = size
-#     self.sample_pointer = sample_pointer
-#     self.loop = loop
-#     self.book = book
-
-#   @classmethod
-#   def from_bytes(cls, data: bytes):
-#     bits, sample_pointer, loop, book = struct.unpack('>4I', data[:0x10])
-
-#     unk_0        = (bits >> 31) & 0b1
-#     codec        = (bits >> 28) & 0b111
-#     medium       = (bits >> 26) & 0b11
-#     is_cached    = (bits >> 25) & 1
-#     is_relocated = (bits >> 24) & 1
-#     size         = (bits >> 0) & 0b111111111111111111111111
-
-#     assert book != 0
-#     assert loop != 0
-#     assert codec in (0, 3)
-#     assert medium == 0
-#     assert is_relocated == 0
-
-#     return cls(unk_0, codec, medium, is_cached, is_relocated, size, sample_pointer, loop, book)
-
-#   def to_dict(self) -> dict:
-#     return {
-#       'unk_0': self.unk_0,
-#       'codec': self.codec,
-#       'medium': self.medium,
-#       'is_cached': self.is_cached,
-#       'is_relocated': self.is_relocated,
-#       'size': self.size,
-#       'sample_pointer': self.sample_pointer,
-#       'loop': self.loop,
-#       'book': self.book
-#     }
-
-#   @classmethod
-#   def from_dict(cls, data: dict):
-#     return cls(
-#       unk_0 = data['unk_0'],
-#       codec = data['codec'],
-#       medium = data['medium'],
-#       is_cached = data['is_cached'],
-#       is_relocated = data['is_relocated'],
-#       size = data['size'],
-#       sample_pointer = data['sample_pointer'],
-#       loop = data['loop'],
-#       book = data['book']
-#     )
-
-#   def to_bytes(self) -> bytes:
-#     bits  = 0
-#     bits |= (self.unk_0 & 0b1) << 31
-#     bits |= (self.codec & 0b111) << 28
-#     bits |= (self.medium & 0b11) << 26
-#     bits |= (self.is_cached & 1) << 25
-#     bits |= (self.is_relocated & 1) << 24
-#     bits |= (self.size & 0b111111111111111111111111)
-
-#     raw = struct.pack('>4I', bits, self.sample_pointer, self.loop, self.book)
-
-#     return add_padding_to_16(raw)
-
-# class TunedSample:
-#   def __init__(self, sample: int, tuning: float):
-#     self.sample = sample
-#     self.tuning = tuning
-
-#   @classmethod
-#   def from_bytes(cls, data: bytes):
-#     sample, tuning = struct.unpack('>1I1f', data[:0x08])
-#     return cls(sample, tuning)
-
-#   def to_bytes(self) -> bytes:
-#     return struct.pack('>1I1f', self.sample, self.tuning)
-
-# class Instrument:
-#   def __init__(self, is_relocated: int, key_region_low: int, key_region_high: int, decay_index: int, envelope: int, samples: list[TunedSample]):
-#     self.is_relocated = is_relocated
-#     self.key_region_low = key_region_low
-#     self.key_region_high = key_region_high
-#     self.decay_index = decay_index
-#     self.envelope = envelope
-#     self.samples = samples
-
-#     assert self.is_relocated == 0
-
-#   @classmethod
-#   def from_bytes(cls, data: bytes):
-#     is_relocated, key_region_low, key_region_high, decay_index, envelope = struct.unpack('>4B1I', data[:0x08])
-
-#     samples = []
-#     offset = 0x08
-#     for _ in range(3):
-#       sample = TunedSample.from_bytes(data[offset:offset + 0x08])
-#       samples.append(sample)
-#       offset += 0x08
-
-#     return cls(is_relocated, key_region_low, key_region_high, decay_index, envelope, samples)
-
-#   def to_dict(self) -> dict:
-#     return {
-#       "is_relocated": self.is_relocated,
-#       "key_region_low": self.key_region_low,
-#       "key_region_high": self.key_region_high,
-#       "decay_index": self.decay_index,
-#       "envelope": self.envelope,
-#       "samples": [{"sample": s.sample, "tuning": s.tuning} for s in self.samples]
-#     }
-
-#   @classmethod
-#   def from_dict(cls, data: dict):
-#     samples = [TunedSample(sample['sample'], sample['tuning']) for sample in data['samples']]
-
-#     return cls(
-#       is_relocated = data['is_relocated'],
-#       key_region_low = data['key_region_low'],
-#       key_region_high = data['key_region_high'],
-#       decay_index = data['decay_index'],
-#       envelope = data['envelope'],
-#       samples = samples
-#     )
-
-#   def to_bytes(self) -> bytes:
-#     raw = struct.pack('>4B1I', self.is_relocated, self.key_region_low, self.key_region_high, self.decay_index, self.envelope)
-
-#     for s in self.samples:
-#       raw += s.to_bytes()
-
-#     return add_padding_to_16(raw)
-
-# class Drum:
-#   def __init__(self, decay_index: int, pan: int, is_relocated: int, sample: TunedSample, envelope: int):
-#     self.decay_index = decay_index
-#     self.pan = pan
-#     self.is_relocated = is_relocated
-#     self.sample = sample
-#     self.envelope = envelope
-
-#     assert self.is_relocated == 0
-
-#   @classmethod
-#   def from_bytes(cls, data: bytes):
-#     decay_index, pan, is_relocated = struct.unpack('>3B', data[:0x04])
-#     sample = TunedSample.from_bytes(data[0x04:0x0C])
-#     envelope = struct.unpack('>I', data[0x0C:0x10])[0]
-
-#     return cls(decay_index, pan, is_relocated, sample, envelope)
-
-#   def to_dict(self) -> dict:
-#     return {
-#       "decay_index": self.decay_index,
-#       "pan": self.pan,
-#       "is_relocated": self.is_relocated,
-#       "padding": 0,
-#       "sample": {
-#         "sample": self.sample.sample,
-#         "tuning": self.sample.tuning
-#       },
-#       "envelope": self.envelope
-#     }
-
-#   @classmethod
-#   def from_dict(cls, data: dict):
-#     return cls(
-#       decay_index = data['decay_index'],
-#       pan = data['pan'],
-#       is_relocated = data['is_relocated'],
-#       sample = TunedSample(data['sample']['sample'], data['sample']['tuning']),
-#       envelope = data['envelope']
-#     )
-
-#   def to_bytes(self) -> bytes:
-#     raw = struct.pack('>3B1x', self.decay_index, self.pan, self.is_relocated)
-#     raw += self.sample.to_bytes()
-#     raw += struct.pack('>I', self.envelope)
-
-#     return add_padding_to_16(raw)
-
-# class SoundEffect:
-#   def __init__(self, sample: TunedSample):
-#     self.sample = sample
-
-#   @classmethod
-#   def from_bytes(cls, data: bytes):
-#     return cls(TunedSample(data[:0x08]))
-
-#   def to_dict(self):
-#     return {
-#       "sample": self.sample.sample,
-#       "tuning": self.sample.tuning
-#     }
-
-#   @classmethod
-#   def from_dict(cls, data: dict):
-#     return cls(TunedSample(data["sample"], data["tuning"]))
-
-#   def to_bytes(self):
-#     return self.sample.to_bytes()
 
 '''
 |- Helper Functions -|
