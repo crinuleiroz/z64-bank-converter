@@ -1,4 +1,3 @@
-# wip
 import xml.etree.ElementTree as xml
 
 def parse_abindexentry(element):
@@ -82,7 +81,7 @@ def parse_instrument(item_elem):
     "key_region_low": int(fields[1].attrib["value"]),
     "key_region_high": int(fields[2].attrib["value"]),
     "decay_index": int(fields[3].attrib["value"]),
-    "envelope": int(fields[4].attrib["index"] if "index" in fields[4].attrib else -1),
+    "envelope": int(fields[4].attrib.get('index', -1)),
     "samples": []
   }
 
@@ -112,7 +111,7 @@ def parse_drum(item_elem):
   sound_struct = fields[4].find("struct")
   sound_fields = sound_struct.findall("field")
 
-  if len(fields) != 5:
+  if len(fields) != 6:
     raise ValueError() # ROM Description is outdated
 
   assert int(fields[3].attrib["value"]) == 0, "" # Padding byte is always 0
@@ -132,7 +131,7 @@ def parse_drum(item_elem):
       "sample": sample_index,
       "tuning": tuning
     },
-    "envelope": int(fields[5].attrib)
+    "envelope": int(fields[5].attrib.get('index', -1))
   }
 
   return drum
@@ -192,7 +191,7 @@ def parse_sample(item_elem):
 
 def parse_codebook(item_elem):
   struct_elem = item_elem.find("struct")
-  fields = struct_elem.find("field")
+  fields = struct_elem.findall("field")
 
   order = int(fields[0].attrib["value"])
   num_predictors = int(fields[1].attrib["value"])
@@ -215,7 +214,7 @@ def parse_codebook(item_elem):
   book = {
     "order": order,
     "num_predictors": num_predictors,
-    "predictors": predictors
+    "predictor_arrays": predictors
   }
 
   return book
@@ -248,8 +247,5 @@ def parse_loopbook(item_elem):
     "loop_end": loop_end,
     "loop_count": loop_count,
     "num_samples": num_samples,
-    "predictors": tail_data
+    "predictor_array": tail_data
   }
-
-if __name__ == '__main':
-  pass
