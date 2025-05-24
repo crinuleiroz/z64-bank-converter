@@ -47,7 +47,16 @@ class Bankmeta:
     return self
 
   def to_bytes(self) -> bytes:
-    return struct.pack('>6B1H', self.sample_medium, self.seq_player, self.table_id, self.font_id, self.num_instruments, self.num_drums, self.num_effects)
+    return struct.pack(
+      '>6B1H',
+      self.sample_medium,
+      self.seq_player,
+      self.table_id,
+      self.font_id,
+      self.num_instruments,
+      self.num_drums,
+      self.num_effects
+    )
 
   @classmethod
   def from_xml(cls, bank_elem: xml.ElementTree):
