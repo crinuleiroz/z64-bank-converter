@@ -2,6 +2,9 @@ import struct
 from enum import IntEnum
 from itertools import islice
 
+import xml.etree.ElementTree as ET
+from utils.XMLParser import *
+
 class AudioSampleCodec(IntEnum):
   CODEC_ADPCM       = 0
   CODEC_S8          = 1
@@ -47,7 +50,7 @@ class Bankmeta:
     return struct.pack('>6B1H', self.sample_medium, self.seq_player, self.table_id, self.font_id, self.num_instruments, self.num_drums, self.num_effects)
 
   @classmethod
-  def from_xml(cls, bank_elem):
+  def from_xml(cls, bank_elem: xml.ElementTree):
     self = cls()
     fields = bank_elem.find('abindexentry/struct').findall('field')
 
@@ -86,12 +89,16 @@ class Bankmeta:
 class Audiobank:
   def __init__(self):
     self.bankmeta = None
+    self.bank_xml = None
     self.drumlist_offset = None
     self.sfxlist_offset  = None
 
     self.drum_offsets       = []
     self.effect_offsets     = []
     self.instrument_offsets = []
+
+    self.instrument_index_map = []
+    self.drum_index_map       = []
 
     self.drums       = []
     self.effects     = []
@@ -160,11 +167,170 @@ class Audiobank:
     return self
 
   def to_bytes(self):
-    ...
+    abbank_size   = 0x08 + (0x04 * self.bankmeta.num_instruments)
+    drumlist_size = 0x04 * self.bankmeta.num_drums
+
+    abbank_offset      = 0x00000000
+    drumlist_offset    = abbank_offset + abbank_size
+    # sfxlist here eventually
+    instruments_offset = drumlist_offset + drumlist_size
+    instruments_size   = 0x20 * self.bankmeta.num_instruments
+    drums_offset       = instruments_offset + instruments_size
+    drums_size         = 0x10 * self.bankmeta.num_drums
+    samples_offset     = drums_offset + drums_size
+    samples_size       = 0x10 * len(self.sample_registry)
+    envelopes_offset   = samples_offset + samples_size
+
+    for i, instrument in enumerate(self.instruments):
+      if instrument is not None:
+        instrument.offset = instruments_offset + (0x20 * i)
+
+    for i, drum in enumerate(self.drums):
+      if drum is not None:
+        drum.offset = drums_offset + (0x10 * i)
+
+    for i, sample in enumerate(self.sample_registry.values()):
+      sample.offset = samples_offset + (0x10 * i)
+
+    offset = envelopes_offset
+    for envelope in self.envelope_registry.values():
+      envelope.offset = offset
+      offset += envelope.struct_size
+
+    for loop in self.loopbook_registry.values():
+      loop.offset = offset
+      offset += loop.struct_size
+
+    for book in self.codebook_registry.values():
+      book.offset = offset
+      offset += book.struct_size
+
+    self.update_internal_offsets()
+
+    abbank_pointer_table = []
+    for index in self.instrument_index_map:
+      if index == -1 or index >= len(self.instruments) or self.instruments[index] is None:
+        abbank_pointer_table.append(0)
+      else:
+        abbank_pointer_table.append(self.instruments[index].offset)
+
+    drum_pointer_table = []
+    for index in self.drum_index_map:
+      if index == -1 or index >= len(self.drums) or self.drums[index] is None:
+        drum_pointer_table.append(0)
+      else:
+        drum_pointer_table.append(self.drums[index].offset)
+
+    # All offsets should be calculated
+    # Build the table data
+    abbank_data = bytearray()
+    abbank_data += struct.pack('>2I', drumlist_offset, 0) # second value is sfxlist pointer
+    for ptr in abbank_pointer_table:
+      abbank_data += struct.pack('>I', ptr)
+
+    drumlist_data = bytearray()
+    for ptr in drum_pointer_table:
+      drumlist_data += struct.pack('>I', ptr)
+
+    # Build the entire binary
+    binary_data = bytearray()
+    binary_data += add_padding_to_16(abbank_data)
+    binary_data += add_padding_to_16(drumlist_data)
+
+    for instrument in self.instruments:
+      if instrument:
+        binary_data += instrument.to_bytes()
+
+    for drum in self.drums:
+      if drum:
+        binary_data += drum.to_bytes()
+
+    for sample in self.sample_registry.values():
+      binary_data += sample.to_bytes()
+
+    for envelope in self.envelope_registry.values():
+      binary_data += envelope.to_bytes()
+
+    for loopbook in self.loopbook_registry.values():
+      binary_data += loopbook.to_bytes()
+
+    for codebook in self.codebook_registry.values():
+      binary_data += codebook.to_bytes()
+
+    return bytes(add_padding_to_16(binary_data))
 
   @classmethod
-  def from_xml(cls):
-    ...
+  def from_xml(cls, bankmeta: Bankmeta, bank_elem: xml.ElementTree):
+    self = cls()
+    self.bankmeta = bankmeta
+    self.bank_xml = bank_elem
+    self.envelope_registry = {}
+    self.sample_registry   = {}
+    self.loopbook_registry = {}
+    self.codebook_registry = {}
+
+    abbank_elem = bank_elem.find('abbank')
+    if abbank_elem is not None:
+      data = parse_abbank(abbank_elem.find('struct'))
+      self.instrument_index_map = [entry['index'] for entry in data['instrument_list']]
+
+    drumlist_elem = bank_elem.find('drumlist')
+    if drumlist_elem is not None:
+      data = parse_drumlist(drumlist_elem)
+      self.drum_index_map = [entry['index'] for entry in data]
+
+    # Create everything in reverse order because xml uses indices instead of offsets
+    loop_elem = bank_elem.find('aladpcmloops')
+    if loop_elem is not None:
+      for i, item in enumerate(loop_elem.findall('item')):
+        data = parse_loopbook(item)
+        loopbook = AdpcmLoop.from_dict(data)
+        loopbook.index = i
+        self.loopbook_registry[i] = loopbook
+
+    book_elem = bank_elem.find('aladpcmbooks')
+    if book_elem is not None:
+      for i, item in enumerate(book_elem.findall('item')):
+        data = parse_codebook(item)
+        codebook = AdpcmBook.from_dict(data)
+        codebook.index = i
+        self.codebook_registry[i] = codebook
+
+    sample_elem = bank_elem.find('samples')
+    if sample_elem is not None:
+      for i, item in enumerate(sample_elem.findall('item')):
+        data = parse_sample(item)
+        sample = Sample.from_dict(data, self.loopbook_registry, self.codebook_registry)
+        sample.index = i
+        self.sample_registry[i] = sample
+
+    envelopes_elem = bank_elem.find('envelopes')
+    if envelopes_elem is not None:
+      for i, item in enumerate(envelopes_elem.findall('item')):
+        data = parse_envelope(item)
+        envelope = Envelope.from_dict(data)
+        envelope.index = i
+        self.envelope_registry[i] = envelope
+
+    self.instruments = []
+    instruments_elem = bank_elem.find('instruments')
+    if instruments_elem is not None:
+      for i, item in enumerate(instruments_elem.findall('item')):
+        data = parse_instrument(item)
+        instrument = Instrument.from_dict(data, self.envelope_registry, self.sample_registry)
+        instrument.index = i
+        self.instruments.append(instrument)
+
+    self.drums = []
+    drums_elem = bank_elem.find('drums')
+    if drums_elem is not None:
+      for i, item in enumerate(drums_elem.findall('item')):
+        data = parse_drum(item)
+        drum = Drum.from_dict(data, self.envelope_registry, self.sample_registry)
+        drum.index = i
+        self.drums.append(drum)
+
+    return self
 
   def to_xml(self) -> dict:
     abbank_fields = [
@@ -310,6 +476,34 @@ class Audiobank:
   def aladpcmloops_xml(self):
     return self.to_xml()["aladpcmloops"]
 
+  def update_internal_offsets(self):
+    for instrument in self.instruments:
+      if instrument.envelope:
+        instrument.envelope_offset = instrument.envelope.offset
+
+      if instrument.low_sample:
+        instrument.low_sample_offset = instrument.low_sample.offset
+      if instrument.prim_sample:
+        instrument.prim_sample_offset = instrument.prim_sample.offset
+      if instrument.high_sample:
+        instrument.high_sample_offset = instrument.high_sample.offset
+
+    for drum in self.drums:
+      if drum.sample:
+        drum.sample_offset = drum.sample.offset
+      if drum.envelope:
+        drum.envelope_offset = drum.envelope.offset
+
+    for effect in self.effects:
+      if effect.sample:
+        effect.sample_offset = effect.sample.offset
+
+    for sample in self.sample_registry.values():
+      if sample.loopbook:
+        sample.loopbook_offset = sample.loopbook.offset
+      if sample.codebook:
+        sample.codebook_offset = sample.codebook.offset
+
 class Instrument: # struct size = 0x20
   def __init__(self):
     self.offset = 0
@@ -418,6 +612,43 @@ class Instrument: # struct size = 0x20
       }
     }
 
+  @classmethod
+  def from_dict(cls, data: dict, envelope_registry: dict, sample_registry: int):
+    self = cls()
+
+    self.is_relocated    = data['is_relocated']
+    self.key_region_low  = data['key_region_low']
+    self.key_region_high = data['key_region_high']
+    self.decay_index     = data['decay_index']
+
+    self.envelope = envelope_registry[data['envelope']] if data['envelope'] != -1 else None
+
+    self.low_sample_tuning  = data['samples'][0]['tuning']
+    self.prim_sample_tuning = data['samples'][1]['tuning']
+    self.high_sample_tuning = data['samples'][2]['tuning']
+
+    self.low_sample  = sample_registry[data['samples'][0]['sample']] if data['samples'][0]['sample'] != -1 else None
+    self.prim_sample = sample_registry[data['samples'][1]['sample']] if data['samples'][1]['sample'] != -1 else None
+    self.high_sample = sample_registry[data['samples'][2]['sample']] if data['samples'][2]['sample'] != -1 else None
+
+    return self
+
+  def to_bytes(self) -> bytearray:
+    return struct.pack(
+      '>4B 1I 1I1f 1I1f 1I1f',
+      self.is_relocated,
+      self.key_region_low,
+      self.key_region_high,
+      self.decay_index,
+      self.envelope_offset,
+      self.low_sample_offset,
+      self.low_sample_tuning,
+      self.prim_sample_offset,
+      self.prim_sample_tuning,
+      self.high_sample_offset,
+      self.high_sample_tuning
+    ) # size = 0x20
+
 class Drum: # struct size = 0x10
   def __init__(self):
     self.offset = 0
@@ -485,6 +716,21 @@ class Drum: # struct size = 0x10
         ]
       }
     }
+
+  @classmethod
+  def from_dict(cls, data: dict, envelope_registry: dict, sample_registry: dict):
+    self = cls()
+
+    self.decay_index  = data['decay_index']
+    self.pan          = data['pan']
+    self.is_relocated = data['is_relocated']
+
+    self.sample_tuning = data['sample']['tuning']
+
+    self.sample = sample_registry[data['sample']['sample']]
+    self.envelope = envelope_registry[data['envelope']] if data['envelope'] != -1 else None
+
+    return self
 
 class SoundEffect:
   def __init__(self):
@@ -555,13 +801,25 @@ class Envelope:
   def to_dict(self) -> dict:
     return {
       "address": str(self.offset), "name": f"Envelope [{self.index}]",
-      "fields": [
+      "field": [
         {"name": f"Delay {i//2 + 1}", "datatype": "int16", "ispointer": "0", "isarray": "0", "meaning": "None", "value": f"{self.points[i//2][0]}"}
         if i % 2 == 0 else
         {"name": f"Argument {i//2 + 1}", "datatype": "int16", "ispointer": "0", "isarray": "0", "meaning": "None", "value": f"{self.points[i//2][1]}"}
         for i in range(len(self.points) * 2) # There are half the tuples as there are actual values
       ]
     }
+
+  @classmethod
+  def from_dict(cls, data: dict):
+    self = cls()
+    points = data.get('points', [])
+
+    self.points = [(p['delay'], p['arg']) for p in points]
+    return self
+
+  @property
+  def struct_size(self) -> int:
+    return add_padding_to_16(len(self.points) * 4)
 
 class Sample: # struct size = 0x10
   def __init__(self):
@@ -645,6 +903,23 @@ class Sample: # struct size = 0x10
       }
     }
 
+  @classmethod
+  def from_dict(cls, data: dict, loopbook_registry: dict, codebook_registry: dict):
+    self = cls()
+
+    self.unk_0        = data['unk_0']
+    self.codec        = data['codec']
+    self.medium       = data['medium']
+    self.is_cached    = data['is_cached']
+    self.is_relocated = data['is_relocated']
+    self.size         = data['size']
+    self.table_offset = data['sample_pointer']
+
+    self.loopbook = None # placeholder
+    self.codebook = None # placeholder
+
+    return self
+
 class AdpcmLoop: # struct size = 0x10 or 0x30
   def __init__(self):
     self.offset = 0
@@ -713,6 +988,24 @@ class AdpcmLoop: # struct size = 0x10 or 0x30
       }
     }
 
+  @classmethod
+  def from_dict(cls, data: dict):
+    self = cls()
+
+    self.loop_start  = data['loop_start']
+    self.loop_end    = data['loop_end']
+    self.loop_count  = data['loop_count']
+    self.num_samples = data['num_samples']
+
+    self.predictor_array = data.get('predictor_array') or []
+
+    return self
+
+  @property
+  def struct_size(self) -> int:
+    base = 0x10
+    return align_to_16(base + (0x20 if self.loop_count != 0 else 0))
+
 class AdpcmBook: # struct size = 0x8 + (0x08 * order * num_predictors)
   def __init__(self):
     self.offset = 0
@@ -776,6 +1069,20 @@ class AdpcmBook: # struct size = 0x8 + (0x08 * order * num_predictors)
         ]
       }
     }
+
+  @classmethod
+  def from_dict(cls, data: dict):
+    self = cls()
+
+    self.order = data['order']
+    self.num_predictors = data['num_predictors']
+    self.predictor_arrays = data['predictor_arrays']
+
+    return self
+
+  @property
+  def struct_size(self) -> int:
+    return align_to_16(8 + (8 * self.order * self.num_predictors))
 
 '''
 |- Structs -|
