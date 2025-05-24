@@ -167,18 +167,18 @@ class Audiobank:
     return self
 
   def to_bytes(self):
-    abbank_size   = 0x08 + (0x04 * self.bankmeta.num_instruments)
-    drumlist_size = 0x04 * self.bankmeta.num_drums
+    abbank_size   = align_to_16(0x08 + (0x04 * self.bankmeta.num_instruments))
+    drumlist_size = align_to_16(0x04 * self.bankmeta.num_drums)
 
     abbank_offset      = 0x00000000
     drumlist_offset    = abbank_offset + abbank_size
     # sfxlist here eventually
     instruments_offset = drumlist_offset + drumlist_size
-    instruments_size   = 0x20 * self.bankmeta.num_instruments
+    instruments_size   = align_to_16(0x20 * self.bankmeta.num_instruments)
     drums_offset       = instruments_offset + instruments_size
-    drums_size         = 0x10 * self.bankmeta.num_drums
+    drums_size         = align_to_16(0x10 * self.bankmeta.num_drums)
     samples_offset     = drums_offset + drums_size
-    samples_size       = 0x10 * len(self.sample_registry)
+    samples_size       = align_to_16(0x10 * len(self.sample_registry))
     envelopes_offset   = samples_offset + samples_size
 
     for i, instrument in enumerate(self.instruments):
@@ -503,7 +503,6 @@ class Audiobank:
         sample.loopbook_offset = sample.loopbook.offset
       if sample.codebook:
         sample.codebook_offset = sample.codebook.offset
-
 
 '''
 |- Structs -|
