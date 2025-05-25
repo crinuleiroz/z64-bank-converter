@@ -22,6 +22,10 @@ try:
   # Import the XML Tag enum
   from utils.Enums import XMLTags
 
+  # Import sample names
+  from utils.SampleNames import OOT_SAMPLE_NAMES, MM_SAMPLE_NAMES
+  import utils.audiobank.structs.Sample as sample_struct
+
 except ImportError as e:
   print("Error: One or more required utilities are missing.")
   print(f"Details: {e}")
@@ -248,27 +252,39 @@ def main() -> None:
 
   filename = os.path.basename(os.path.splitext(files[0])[0])
 
+  # Determine which game's sample names to use
+  if game == 'oot':
+    sample_struct.SAMPLE_NAMES.update(OOT_SAMPLE_NAMES)
+  elif game == 'mm':
+    sample_struct.SAMPLE_NAMES.update(MM_SAMPLE_NAMES)
+
   if mode == 'xml':
     ''' From XML '''
-
-    # Read the XML file
     tree = xml.parse(files[0])
     bank_element = tree.getroot()
 
     # Create the binary bank and bankmeta
     bankmeta = Bankmeta.from_xml(bank_element) # Instantiate the bankmeta and collect all its data
+
+    # Required for audiotable offset shenanigans
+    sample_struct.AUDIOTABLE_ID = bankmeta.table_id
+    sample_struct.DETECTED_GAME = game
+
     audiobank = Audiobank.from_xml(bankmeta, bank_element) # Instantiate the audiobank and collect all its data
     create_binary_bank(filename, bankmeta, audiobank)
 
   elif mode == 'binary':
     ''' From binary zbank and bankmeta '''
-
-    # Read the binary files
     bankmeta_data = read_binary(bankmeta_file)
     bank_data = read_binary(bank_file)
 
     # Create the XML bank
     bankmeta = Bankmeta.from_bytes(bankmeta_data) # Instantiate the bankmeta and collect all its data
+
+    # Required for audiotable offset shenanigans
+    sample_struct.AUDIOTABLE_ID = bankmeta.table_id
+    sample_struct.DETECTED_GAME = game
+
     audiobank = Audiobank.from_bytes(bankmeta, bank_data) # Instantiate the audiobank and collect all its data
     create_xml_bank(filename, bankmeta, audiobank)
 
