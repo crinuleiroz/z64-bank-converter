@@ -65,6 +65,18 @@ class Drum: # struct size = 0x10
     self.sample   = None
     self.envelope = None
 
+  @staticmethod
+  def _get_drum_name(sample_name):
+    parts = sample_name.split(':')
+    if len(parts) == 4:
+      stripped_name = f'{parts[0]}:{parts[1]}'
+    elif len(parts) == 3:
+      stripped_name = parts[0]
+    else:
+      stripped_name = parts[0] if parts else sample_name
+
+    return stripped_name.rstrip(':') if stripped_name else ""
+
   @classmethod
   def from_bytes(cls, drum_index: int, drum_offset: int, bank_data: bytes, envelope_registry: dict,
                  sample_registry: dict, loopbook_registry: dict, codebook_registry: dict):
@@ -88,7 +100,8 @@ class Drum: # struct size = 0x10
     self.sample = Sample.from_bytes(self.sample_offset, bank_data, sample_registry, loopbook_registry, codebook_registry)
     self.envelope = Envelope.from_bytes(self.envelope_offset, bank_data, envelope_registry) if self.envelope_offset != 0 else None
 
-    self.name = self.sample.name if self.sample.name != "Sample" else "Drum"
+    drum_name = cls._get_drum_name(self.sample.name)
+    self.name = drum_name if drum_name and drum_name != "Sample" else "Drum"
 
     return self
 
