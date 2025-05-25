@@ -1,4 +1,4 @@
-''' Placeholder '''
+''' A script for converting Zelda64 instrument banks between their binary format and the SEQ64-compatible XML format '''
 
 # Define current version
 CURRENT_VERSION = '2025.05.25'
