@@ -130,8 +130,8 @@ class Sample: # struct size = 0x10
     self.codebook = AdpcmBook.from_bytes(self.codebook_offset, bank_data, codebook_registry)
 
     # Update the codebook and loopbook to be named after their sample
-    self.loopbook.name = f"{self.name} Loopbook"
-    self.codebook.name = f"{self.name} Codebook"
+    self.loopbook.name = f"{self.name} Loopbook" if sample_name != "Sample" else "Loopbook"
+    self.codebook.name = f"{self.name} Codebook" if sample_name != "Sample" else "Codebook"
 
     sample_registry[sample_offset] = self
     self.index = len(sample_registry) - 1
