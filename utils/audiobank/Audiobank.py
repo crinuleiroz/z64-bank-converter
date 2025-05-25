@@ -482,7 +482,7 @@ class Audiobank:
       absfxlist_xml = [{
         "name": "ABSFXList",
         "field": [
-          {"name": "SFX List", "datatype": "ABSound", "ispointer": "0", "isarray": "1", "arraylenvar": "NUM_SFX", "element": effect_elements}
+          {"name": "Effect List", "datatype": "ABSound", "ispointer": "0", "isarray": "1", "arraylenvar": "NUM_SFX", "element": effect_elements}
         ]
       }]
 
