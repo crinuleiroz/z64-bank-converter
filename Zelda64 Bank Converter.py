@@ -1,7 +1,7 @@
 ''' Placeholder '''
 
 # Define current version
-CURRENT_VERSION = '2025.05.24'
+CURRENT_VERSION = '2025.05.25'
 
 # Imports
 import os
