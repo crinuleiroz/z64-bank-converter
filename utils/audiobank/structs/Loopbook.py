@@ -59,7 +59,7 @@ class AdpcmLoop: # struct size = 0x10 or 0x30
       self.num_samples
     ) = struct.unpack('>2I 1i 1I', bank_data[loopbook_offset: loopbook_offset + 0x10])
 
-    assert self.loop_count in (0, 0xFFFFFFFF)
+    assert self.loop_count in (0, -1) # (0, 0xFFFFFFFF)
 
     if self.loop_count != 0:
       self.predictor_array = list(struct.unpack('>16h', bank_data[loopbook_offset + 0x10:loopbook_offset + 0x30]))
@@ -108,6 +108,8 @@ class AdpcmLoop: # struct size = 0x10 or 0x30
     self.loop_end    = data['loop_end']
     self.loop_count  = data['loop_count']
     self.num_samples = data['num_samples']
+
+    assert self.loop_count in (0, -1) # (0, 0xFFFFFFFF)
 
     self.predictor_array = data.get('predictor_array', [])
 
