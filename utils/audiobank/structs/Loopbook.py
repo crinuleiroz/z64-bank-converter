@@ -33,6 +33,9 @@ from ...Helpers import *
 class AdpcmLoop: # struct size = 0x10 or 0x30
   ''' Represents an ADPCM loopbook structure in an instrument bank '''
   def __init__(self):
+    # Set the default name to be used by the class
+    self.name = "Loopbook"
+
     self.offset = 0
     self.index  = -1
 
@@ -87,7 +90,7 @@ class AdpcmLoop: # struct size = 0x10 or 0x30
       }]
 
     return {
-      "address": str(self.offset), "name": f"Loop [{self.index}]",
+      "address": str(self.offset), "name": f"{self.name} [{self.index}]",
       "struct": {
         "name": "ALADPCMLoop", "HAS_TAIL": f"{0 if self.loop_count == 0 else 1}",
         "field": [
