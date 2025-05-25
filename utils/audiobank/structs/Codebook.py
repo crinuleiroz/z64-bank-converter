@@ -39,6 +39,9 @@ from ...Helpers import *
 class AdpcmBook: # struct size = 0x8 + (0x08 * order * num_predictors)
   ''' Represents an ADPCM codebook structure in an instrument bank '''
   def __init__(self):
+    # Set the default name to be used by the class
+    self.name = "Codebook"
+
     self.offset = 0
     self.index  = -1
 
@@ -91,7 +94,7 @@ class AdpcmBook: # struct size = 0x8 + (0x08 * order * num_predictors)
     ]
 
     return {
-      "address": str(self.offset), "name": f"Book [{self.index}]",
+      "address": str(self.offset), "name": f"{self.name} [{self.index}]",
       "struct": {"name": "ALADPCMBook", "NUM_PRED": str(self.num_predictors),
         "field": [
           {"name": "Order", "datatype": "int32", "ispointer": "0", "isarray": "0", "meaning": "None", "value": str(self.order)},
