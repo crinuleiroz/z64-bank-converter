@@ -51,4 +51,5 @@ options:
 - [x] Add proper argument parsing
 - [x] Add docstrings
 - [x] Add vanilla names for instruments and samples for both games
+- [ ] Add sound effect packing for xml to binary
 - [ ] Prettify CLI output
