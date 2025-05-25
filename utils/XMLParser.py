@@ -1,3 +1,53 @@
+'''
+### XMLParser Module
+
+This module provides functions for parsing SEQ64-compatible XML representations of instrument bank
+data used in Ocarina of Time and Majora's Mask. It converts XML elements into structured Python
+dictionaries to support reconstruction and export of binary bank data.
+
+Functions:
+    `parse_abindexentry`:
+        Parses the instrument bank's metadata entry.
+
+    `parse_abbank`:
+        Parses the drum list pointer, effect list pointer, and instrument list.
+
+    `parse_drumlist`:
+        Parses the drum list.
+
+    `parse_sfxlist`:
+        Parses the effect list.
+
+    `parse_instrument`:
+        Parses a single instrument structure.
+
+    `parse_drum`:
+        Parses a single drum structure.
+
+    `parse_envelope`:
+        Parses a single envelope array as a sequence of delay-argument pairs.
+
+    `parse_sample`:
+        Parses a single sample structure.
+
+    `parse_codebook`:
+        Parses a single ADPCM codebook.
+
+    `parse_loopbook`:
+        Parses a single ADPCM loopbook.
+
+Dependencies:
+    `xml.etree.ElementTree`:
+        Used for navigating and extracting information from XML trees.
+
+Intended Usage:
+    This module is intended for internal use during SEQ64 XML deserialization. It serves as
+    the backend for converting structured XML into valid memory representations suitable for
+    bank reconstruction, modification, or binary re-export.
+'''
+
+import xml.etree.ElementTree as xml
+
 def parse_abindexentry(element):
   struct_elem = element.find("struct")
   if struct_elem is None:
@@ -13,8 +63,8 @@ def parse_abindexentry(element):
     "medium": int(fields[2].attrib["value"]),
     "seq_player": int(fields[3].attrib["value"]),
     "table_id": int(fields[4].attrib["value"]),
-    "bank_id": int(fields[5].attrib["value"]),
-    "num_insts": int(fields[6].attrib["value"]),
+    "font_id": int(fields[5].attrib["value"]),
+    "num_instruments": int(fields[6].attrib["value"]),
     "num_drums": int(fields[7].attrib["value"]),
     "num_effects": int(fields[8].attrib["value"])
   }
@@ -248,3 +298,6 @@ def parse_loopbook(item_elem):
     "num_samples": num_samples,
     "predictor_array": tail_data
   }
+
+if __name__ == '__main__':
+  pass
