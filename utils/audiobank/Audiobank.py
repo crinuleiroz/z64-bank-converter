@@ -110,12 +110,12 @@ class Bankmeta:
     return {
       "name": "ABIndexentry",
       "field": [
-          {"name": "Bank Offset in Audiobank", "datatype": "uint32", "ispointer": "0", "isarray": "0", "meaning": "Ptr Bank (in Audiobank)", "value": str(self.address)},
+          {"name": "Audiobank Address", "datatype": "uint32", "ispointer": "0", "isarray": "0", "meaning": "Ptr Bank (in Audiobank)", "value": str(self.address)},
           {"name": "Bank Size", "datatype": "uint32", "ispointer": "0", "isarray": "0", "meaning": "None", "value": str(self.size)},
           {"name": "Sample Medium", "datatype": "uint8", "ispointer": "0", "isarray": "0", "meaning": "None", "defaultval": "2", "value": str(self.sample_medium)},
           {"name": "Sequence Player", "datatype": "uint8", "ispointer": "0", "isarray": "0", "meaning": "None", "defaultval": "2", "value": str(self.seq_player)},
-          {"name": "Audiotable ID", "datatype": "uint8", "ispointer": "0", "isarray": "0", "meaning": "None", "defaultval": "0", "value": str(self.table_id)},
-          {"name": "Soundfont ID", "datatype": "uint8", "ispointer": "0", "isarray": "0", "meaning": "None", "defaultval": "255", "value": str(self.font_id)},
+          {"name": "Audiotable", "datatype": "uint8", "ispointer": "0", "isarray": "0", "meaning": "None", "defaultval": "0", "value": str(self.table_id)},
+          {"name": "Audiobank ID", "datatype": "uint8", "ispointer": "0", "isarray": "0", "meaning": "None", "defaultval": "255", "value": str(self.font_id)},
           {"name": "NUM_INST", "datatype": "uint8", "ispointer": "0", "isarray": "0", "meaning": "NUM_INST", "value": str(self.num_instruments)},
           {"name": "NUM_DRUM", "datatype": "uint8", "ispointer": "0", "isarray": "0", "meaning": "NUM_DRUM", "value": str(self.num_drums)},
           {"name": "NUM_SFX", "datatype": "uint16", "ispointer": "0", "isarray": "0", "meaning": "NUM_SFX", "value": str(self.num_effects)}
@@ -301,9 +301,11 @@ class Audiobank:
       if index != -1 and 0 <= index < len(self.drums) and self.drums[index] is not None:
         drumlist_data[i * 4:i * 4 + 4] = struct.pack('>I', self.drums[index].offset)
 
-    binary_data[abbank_offset:abbank_offset + len(abbank_data)] = add_padding_to_16(abbank_data)
-    binary_data[drumlist_offset:drumlist_offset + len(drumlist_data)] = add_padding_to_16(drumlist_data)
+    # Do not repad bytes for no reason, it randomly adds 8 extra bytes?
+    binary_data[abbank_offset:abbank_offset + len(abbank_data)] = abbank_data
+    binary_data[drumlist_offset:drumlist_offset + len(drumlist_data)] = drumlist_data
 
+    # to_bytes() already pads everything, so do not repad bytes for no reason...
     for instrument in self.instruments:
       if instrument is not None:
         inst_bytes = instrument.to_bytes()
@@ -321,19 +323,19 @@ class Audiobank:
     for envelope in self.envelope_registry.values():
       envelope_bytes = envelope.to_bytes()
       size = align_to_16(len(envelope_bytes))
-      binary_data[envelope.offset:envelope.offset + size] = add_padding_to_16(envelope_bytes)
+      binary_data[envelope.offset:envelope.offset + size] = envelope_bytes
 
     for loopbook in self.loopbook_registry.values():
       loopbook_bytes = loopbook.to_bytes()
       size = align_to_16(len(loopbook_bytes))
-      binary_data[loopbook.offset:loopbook.offset + size] = add_padding_to_16(loopbook_bytes)
+      binary_data[loopbook.offset:loopbook.offset + size] = loopbook_bytes
 
     for codebook in self.codebook_registry.values():
       codebook_bytes = codebook.to_bytes()
       size = align_to_16(len(codebook_bytes))
-      binary_data[codebook.offset:codebook.offset + size] = add_padding_to_16(codebook_bytes)
+      binary_data[codebook.offset:codebook.offset + size] = codebook_bytes
 
-    return bytes(add_padding_to_16(binary_data))
+    return bytes(binary_data) # Don't repad for no reason...
 
   @classmethod
   def from_xml(cls, bankmeta: Bankmeta, bank_elem):
@@ -411,7 +413,7 @@ class Audiobank:
   def to_xml(self) -> dict:
     abbank_fields = [
       {"name": "Drum List Pointer", "datatype": "uint32", "ispointer": "1", "ptrto": "ABDrumList", "isarray": "0", "meaning": "Ptr Drum List", "value": str(self.drumlist_offset)},
-      {"name": "Effect List Pointer", "datatype": "uint32", "ispointer": "1", "ptrto": "ABSFXList", "isarray": "0", "meaning": "Ptr SFX List", "value": str(self.sfxlist_offset)},
+      {"name": "SFX List Pointer", "datatype": "uint32", "ispointer": "1", "ptrto": "ABSFXList", "isarray": "0", "meaning": "Ptr SFX List", "value": str(self.sfxlist_offset)},
       {"name": "Instrument List", "datatype": "uint32", "ispointer": "1", "ptrto": "ABInstrument", "isarray": "1", "arraylenvar": "NUM_INST", "meaning": "List of Ptrs to Insts"}
     ]
 
@@ -482,7 +484,7 @@ class Audiobank:
       absfxlist_xml = [{
         "name": "ABSFXList",
         "field": [
-          {"name": "Effect List", "datatype": "ABSound", "ispointer": "0", "isarray": "1", "arraylenvar": "NUM_SFX", "element": effect_elements}
+          {"name": "SFX List", "datatype": "ABSound", "ispointer": "0", "isarray": "1", "arraylenvar": "NUM_SFX", "element": effect_elements}
         ]
       }]
 
