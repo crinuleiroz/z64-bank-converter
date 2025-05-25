@@ -43,7 +43,7 @@ options:
   -g, --game {oot,mm}  specifies which game's sample and envelope names the converter will use for XML files
 ```
 
-### To-Do
+# To-Do
 - [x] Parse binary instrument bank and all of its information
 - [x] Store unpacked binary data into XML-ready dictionaries
 - [x] Write out the XML-ready data into a SEQ64 XML file
