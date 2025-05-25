@@ -86,7 +86,6 @@ class Sample: # struct size = 0x10
   @staticmethod
   def _get_sample_name(table_offset):
     sample_name = SAMPLE_NAMES.get(table_offset)
-    print(sample_name)
     return sample_name if sample_name else ""
 
   @classmethod
