@@ -9,6 +9,7 @@ This code takes a binary bank and bankmeta file for the Nintendo 64 Zelda games 
 - [x] Store unpacked binary data into XML-ready dictionaries
 - [x] Write out the XML-ready data into a SEQ64 XML file
 - [x] Add functionality to repack a SEQ64 XML instrument bank into a binary instrument bank and bankmeta file
-- [ ] Add proper argument parsing
-- [ ] Add docstrings
+- [x] Add proper argument parsing
+- [x] Add docstrings
 - [ ] Add vanilla names for instruments and samples for both games
+- [ ] Prettify CLI output
