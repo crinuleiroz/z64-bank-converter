@@ -43,6 +43,9 @@ from ...Helpers import *
 class Instrument: # struct size = 0x20
   ''' Represents an instrument structure in an instrument bank '''
   def __init__(self):
+    # Set the default name to be used by the class
+    self.name = "Instrument"
+
     self.offset = 0
     self.index  = -1
 
@@ -69,6 +72,35 @@ class Instrument: # struct size = 0x20
     self.low_sample  = None
     self.prim_sample = None
     self.high_sample = None
+
+  @staticmethod
+  def _get_instrument_name(sample_names):
+    ''' Finds common prefix among samples and returns the instrument name '''
+    stripped_names = []
+    for name in sample_names:
+      if not name:
+        continue
+
+      parts = name.split(':')
+      if len(parts) == 4:
+        stripped_names.append(f'{parts[0]}:{parts[1]}')
+      elif len(parts) == 3:
+        stripped_names.append(parts[0])
+      else:
+        stripped_names.append(parts[0] if parts else name)
+
+    if not stripped_names:
+      return ""
+
+    prefix = stripped_names[0]
+    for name in stripped_names[1:]:
+      i = 0
+      while i < len(prefix) and i < len(name) and prefix[i] == name[i]:
+        i += 1
+
+      prefix = prefix[:i]
+
+    return prefix.rstrip(':') if prefix else ""
 
   @classmethod
   def from_bytes(cls, inst_index: int, inst_offset: int, bank_data: bytes, envelope_registry: dict,
@@ -104,11 +136,20 @@ class Instrument: # struct size = 0x20
     self.prim_sample = Sample.from_bytes(self.prim_sample_offset, bank_data, sample_registry, loopbook_registry, codebook_registry) if self.prim_sample_offset != 0 else None
     self.high_sample = Sample.from_bytes(self.high_sample_offset, bank_data, sample_registry, loopbook_registry, codebook_registry) if self.high_sample_offset != 0 else None
 
+    sample_names = [
+      self.low_sample.name if self.low_sample else "",
+      self.prim_sample.name if self.prim_sample else "",
+      self.high_sample.name if self.high_sample else "",
+    ]
+
+    instrument_name = cls._get_instrument_name(sample_names)
+    self.name = instrument_name if instrument_name else "Instrument"
+
     return self
 
   def to_dict(self) -> dict:
     return {
-      "address": str(self.offset), "name": f"Instrument [{self.index}]",
+      "address": str(self.offset), "name": f"{self.name} [{self.index}]",
       "struct": {
         "name": "ABInstrument",
         "field": [
