@@ -50,5 +50,5 @@ options:
 - [x] Add functionality to repack a SEQ64 XML instrument bank into a binary instrument bank and bankmeta file
 - [x] Add proper argument parsing
 - [x] Add docstrings
-- [ ] Add vanilla names for instruments and samples for both games
+- [x] Add vanilla names for instruments and samples for both games
 - [ ] Prettify CLI output
