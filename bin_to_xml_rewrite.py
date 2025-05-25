@@ -8,6 +8,7 @@ import os
 import sys
 import argparse
 import datetime
+from typing import Final
 from dataclasses import dataclass, field
 import xml.etree.ElementTree as xml
 
@@ -28,11 +29,51 @@ except ImportError as e:
   input("\nPress Enter to exit...")
   sys.exit(1)
 
-def parse_args():
-  parser = argparse.ArgumentParser(description="Convert instrument bank data for Ocarina of Time (OOT) and Majora's Mask (MM) from binary to SEQ64-compatible XML or vice versa")
+# Create ANSI formatting for terminal messages
+# ANSI COLORS: https://talyian.github.io/ansicolors/
+# TERMINAL TEXT COLORS
+RED        : Final = '\x1b[31m'
+PINK_218   : Final = '\x1b[38;5;218m'
+PINK_204   : Final = '\x1b[38;5;204m'
+YELLOW     : Final = '\x1b[33m'
+YELLOW_229 : Final = '\x1b[38;5;229m'
+CYAN       : Final = '\x1b[36m'
+BLUE_39    : Final = '\x1b[38;5;39m'
+GRAY_245   : Final = '\x1b[38;5;245m'
+GRAY_248   : Final = '\x1b[38;5;248m'
+GREEN_79   : Final = '\x1b[38;5;79m'
 
-  parser.add_argument('files', nargs='+', help="Either an XML file or a pair of .bankmeta and .zbank files in any order.")
-  parser.add_argument('-g', '--game', choices=['oot', 'mm'], required=True, help="Specify the source game: 'oot' or 'mm'.")
+# TERMINAL TEXT STYLES
+BOLD      : Final = '\x1b[1m'
+ITALIC    : Final = '\x1b[3m'
+UNDERLINE : Final = '\x1b[4m'
+STRIKE    : Final = '\x1b[9m'
+RESET     : Final = '\x1b[0m' # Resets all text styles and colors
+
+# TERMINAL CLEANERS
+PL  : Final = '\x1b[F' # Move cursor to previous line
+CL  : Final = '\x1b[K' # Clear line
+
+# Argument Parser
+def parse_args():
+  parser = argparse.ArgumentParser(
+    formatter_class=argparse.RawDescriptionHelpFormatter,
+    usage=f'{GRAY_248}[>_]{RESET} {YELLOW_229}python{RESET} {BLUE_39}{os.path.basename(sys.argv[0])}{RESET} {GRAY_245}[-h]{RESET} {BLUE_39}file [files ...]{RESET} {GRAY_245}-g {{oot, mm}}{RESET}',
+    description='''This script converts Zelda64 instrument banks between binary and SEQ64-compatible XML.'''
+  )
+
+  parser.add_argument(
+    'files',
+    nargs='+',
+    help="a SEQ64-compatible XML file or a pair of binary files (.zbank and .bankmeta)"
+  )
+  parser.add_argument(
+    '-g',
+    '--game',
+    choices=['oot', 'mm'],
+    required=True,
+    help="specifies which game's sample and envelope names the converter will use for XML files"
+  )
 
   return parser.parse_args()
 
