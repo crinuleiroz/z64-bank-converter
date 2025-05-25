@@ -84,9 +84,9 @@ class Envelope:
     return {
       "address": str(self.offset), "name": f"{self.name} [{self.index}]",
       "field": [
-        {"name": f"Delay {i//2 + 1}", "datatype": "int16", "ispointer": "0", "isarray": "0", "meaning": "None", "value": f"{self.points[i//2][0]}"}
+        {"name": f"Time or Opcode {i//2 + 1}", "datatype": "int16", "ispointer": "0", "isarray": "0", "meaning": "None", "value": f"{self.points[i//2][0]}"}
         if i % 2 == 0 else
-        {"name": f"Argument {i//2 + 1}", "datatype": "int16", "ispointer": "0", "isarray": "0", "meaning": "None", "value": f"{self.points[i//2][1]}"}
+        {"name": f"Amp or Arg {i//2 + 1}", "datatype": "int16", "ispointer": "0", "isarray": "0", "meaning": "None", "value": f"{self.points[i//2][1]}"}
         for i in range(len(self.points) * 2) # There are half the tuples as there are actual values
       ]
     }
