@@ -154,7 +154,7 @@ def dict_to_xml(tag: str, d, parent: xml.Element = None) -> xml.Element:
 
     return element
 
-def create_xml_bank(filename: str, bankmeta: object, audiobank: object) -> None:
+def create_xml_bank(filename: str, bankmeta: object, audiobank: object, game: str) -> None:
   ''' Build XML file '''
   xml_root = xml.Element('bank')
 
@@ -162,7 +162,12 @@ def create_xml_bank(filename: str, bankmeta: object, audiobank: object) -> None:
     xml_root.set(key, str(value))
 
   xml_tree = xml.ElementTree(xml_root)
-  xml_comment = xml.Comment(f'\n      DATE CREATED: {DATE}\n\n      This bank was created from a binary bank file, because of this there may be errors or differences from the original bank!\n  ')
+  if game == 'oot':
+    xml_comment = xml.Comment(f'\n      ORIGIN GAME: OCARINA OF TIME\n      DATE CREATED: {DATE}\n\n      This bank was created from a binary bank file, because of this there may be errors or differences from the original bank!\n  ')
+  elif game == 'mm':
+    xml_comment = xml.Comment(f'\n      ORIGIN GAME: MAJORAS MASK\n      DATE CREATED: {DATE}\n\n      This bank was created from a binary bank file, because of this there may be errors or differences from the original bank!\n  ')
+  else:
+    xml_comment = xml.Comment(f'\n      DATE CREATED: {DATE}\n\n      This bank was created from a binary bank file, because of this there may be errors or differences from the original bank!\n  ')
 
   xml_data = [
     XMLDataEntry(XMLTags.ABINDEXENTRY, 'struct', [bankmeta.to_dict()]),
@@ -286,7 +291,7 @@ def main() -> None:
     sample_struct.DETECTED_GAME = game
 
     audiobank = Audiobank.from_bytes(bankmeta, bank_data) # Instantiate the audiobank and collect all its data
-    create_xml_bank(filename, bankmeta, audiobank)
+    create_xml_bank(filename, bankmeta, audiobank, game)
 
 if __name__ == '__main__':
   main()
