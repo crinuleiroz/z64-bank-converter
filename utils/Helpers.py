@@ -32,6 +32,31 @@ def add_padding_to_16(packed_data: bytearray) -> bytearray:
   padding: int = (-len(packed_data)) & 0x0F # or (0x10 - (size % 0x10)) % 0x10
   return packed_data + b'\x00' * padding
 
+# Needed for sample names
+def add_table_oot(table_num: int, table_offset: int) -> int:
+  adjusted_offset = table_offset
+
+  if table_num == 2:
+    adjusted_offset += 0x3FA9E0
+  elif table_num == 3:
+    adjusted_offset += 0x4006B0
+  elif table_num == 4:
+    adjusted_offset += 0x41D760
+  elif table_num == 5:
+    adjusted_offset += 0x427D30
+  elif table_num == 6:
+    adjusted_offset += 0x4377E0
+
+  return adjusted_offset
+
+def add_table_mm(table_num: int, table_offset: int) -> int:
+  adjusted_offset = table_offset
+
+  if table_num == 2:
+    adjusted_offset += 0x538CC0
+
+  return adjusted_offset
+
 # Explose struct
 struct = _struct
 
