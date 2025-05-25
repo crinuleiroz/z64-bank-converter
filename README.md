@@ -1,4 +1,4 @@
-# Zelda64 Binary to XML to Binary Instrument Bank
+# Zelda64 Instrument Bank Converter
 This is a WIP rewrite of a binary to XML to binary script that converts Zelda64 instrument banks from binary to SEQ64-compatible XML and vice versa. The rewrite aims to improve code, and to allow others to easily use or modify it.
 
 ## What it Does
