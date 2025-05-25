@@ -50,9 +50,17 @@ from ...Helpers import *
 # Import the audio sample enums
 from ...Enums import AudioSampleCodec, AudioStorageMedium
 
+# Sample processing
+SAMPLE_NAMES: dict[int, str] = {}
+AUDIOTABLE_ID: int = 0
+DETECTED_GAME: str = ''
+
 class Sample: # struct size = 0x10
   ''' Represents a sample structure in an instrument bank '''
   def __init__(self):
+    # Set the default name to be used by the class
+    self.name = "Sample"
+
     self.offset = 0
     self.index  = -1
 
@@ -74,6 +82,12 @@ class Sample: # struct size = 0x10
     # Child ADPCM structures
     self.loopbook = None
     self.codebook = None
+
+  @staticmethod
+  def _get_sample_name(table_offset):
+    sample_name = SAMPLE_NAMES.get(table_offset)
+    print(sample_name)
+    return sample_name if sample_name else ""
 
   @classmethod
   def from_bytes(cls, sample_offset: int, bank_data: bytes, sample_registry: dict, loopbook_registry: dict, codebook_registry: dict):
@@ -103,8 +117,22 @@ class Sample: # struct size = 0x10
     assert AudioStorageMedium(self.medium) == AudioStorageMedium.MEDIUM_RAM
     assert not self.is_relocated
 
+    # Get the proper offset for searching through the audio tables
+    if DETECTED_GAME == 'oot':
+      name_offset = add_table_oot(AUDIOTABLE_ID, self.table_offset)
+    elif DETECTED_GAME == 'mm':
+      name_offset = add_table_mm(AUDIOTABLE_ID, self.table_offset)
+
+    # Get the sample name from the detected game
+    sample_name = cls._get_sample_name(name_offset)
+    self.name = sample_name if sample_name else "Sample"
+
     self.loopbook = AdpcmLoop.from_bytes(self.loopbook_offset, bank_data, loopbook_registry)
     self.codebook = AdpcmBook.from_bytes(self.codebook_offset, bank_data, codebook_registry)
+
+    # Update the codebook and loopbook to be named after their sample
+    self.loopbook.name = f"{self.name} Loopbook"
+    self.codebook.name = f"{self.name} Codebook"
 
     sample_registry[sample_offset] = self
     self.index = len(sample_registry) - 1
@@ -112,7 +140,7 @@ class Sample: # struct size = 0x10
 
   def to_dict(self) -> dict:
     return {
-      "address": str(self.offset), "name": f"Sample [{self.index}]",
+      "address": str(self.offset), "name": f"{self.name} [{self.index}]",
       "struct": {"name": "ABSample",
         # Leave this comment formatted as-is, it adds a nice prettified comment to each sample item explaining the bitfield
         "__comment__": f"""
