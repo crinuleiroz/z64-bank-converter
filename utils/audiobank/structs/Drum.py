@@ -43,6 +43,9 @@ from ...Helpers import *
 class Drum: # struct size = 0x10
   ''' Represents a drum structure in an instrument bank '''
   def __init__(self):
+    # Set the default name to be used by the class
+    self.name = "Drum"
+
     self.offset = 0
     self.index  = -1
 
@@ -59,7 +62,7 @@ class Drum: # struct size = 0x10
     self.envelope_offset = 0
 
     # Child sample structure and envelope array
-    self.sample = None
+    self.sample   = None
     self.envelope = None
 
   @classmethod
@@ -85,11 +88,13 @@ class Drum: # struct size = 0x10
     self.sample = Sample.from_bytes(self.sample_offset, bank_data, sample_registry, loopbook_registry, codebook_registry)
     self.envelope = Envelope.from_bytes(self.envelope_offset, bank_data, envelope_registry) if self.envelope_offset != 0 else None
 
+    self.name = self.sample.name if self.sample.name != "Sample" else "Drum"
+
     return self
 
   def to_dict(self) -> dict:
     return {
-      "address": str(self.offset), "name": f"Drum [{self.index}]",
+      "address": str(self.offset), "name": f"{self.name} [{self.index}]",
       "struct": {"name": "ABDrum",
         "field": [
           {"name": "Decay Index", "datatype": "uint8", "ispointer": "0", "isarray": "0", "meaning": "None", "value": str(self.decay_index)},
