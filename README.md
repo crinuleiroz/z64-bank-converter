@@ -63,9 +63,9 @@ options:
     <!-- ABIndex Struct -->
     <struct name="ABIndex">
       <field name="NUM_BANK" datatype="uint16" ispointer="0" isarray="0" meaning="NUM_BANK"/>
-      <field name="zeros" datatype="uint16" ispointer="0" isarray="1" meaning="None"
+      <field name="Padding Bytes" datatype="uint16" ispointer="0" isarray="1" meaning="None"
              arraylenfixed="7" defaultval="0"/>
-      <field name="unnamed" datatype="ABIndexEntry" ispointer="0" isarray="1"
+      <field name="Bank List" datatype="ABIndexEntry" ispointer="0" isarray="1"
              meaning="List of Banks" arraylenvar="NUM_BANK"/>
     </struct>
     <!-- ABIndexEntry Struct -->
