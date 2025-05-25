@@ -69,9 +69,9 @@ class Drum: # struct size = 0x10
   def _get_drum_name(sample_name):
     parts = sample_name.split(':')
     if len(parts) == 4:
-      stripped_name = f'{parts[0]}:{parts[1]}'
+      stripped_name = f'{parts[0]}:{parts[1]}:{parts[2]}'
     elif len(parts) == 3:
-      stripped_name = parts[0]
+      stripped_name = f'{parts[0]}:{parts[1]}'
     else:
       stripped_name = parts[0] if parts else sample_name
 
