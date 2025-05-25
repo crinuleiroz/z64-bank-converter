@@ -1,59 +1,46 @@
 ''' Placeholder '''
 
+# Define current version
+CURRENT_VERSION = '2025.05.24'
+
+# Imports
 import os
 import sys
+import argparse
 import datetime
 from dataclasses import dataclass, field
 import xml.etree.ElementTree as xml
 
-# Import the Bankmeta and Audiobank
-from utils.audiobank.Audiobank import Bankmeta, Audiobank
+# Ensure /utils is present and can be imported
+try:
+  import utils
 
-# Import the XML Tag enum
-from utils.Enums import XMLTags
+  # Import the Bankmeta and Audiobank
+  from utils.audiobank.Audiobank import Bankmeta, Audiobank
 
-CURRENT_VERSION = '2025.05.24'
+  # Import the XML Tag enum
+  from utils.Enums import XMLTags
 
+except ImportError as e:
+  print("Error: One or more required utilities are missing.")
+  print(f"Details: {e}")
+  print("\nPlease ensure the 'utils' package is correcty installed and all its dependencies are available.")
+  input("\nPress Enter to exit...")
+  sys.exit(1)
+
+def parse_args():
+  parser = argparse.ArgumentParser(description="Convert instrument bank data for Ocarina of Time (OOT) and Majora's Mask (MM) from binary to SEQ64-compatible XML or vice versa")
+
+  parser.add_argument('files', nargs='+', help="Either an XML file or a pair of .bankmeta and .zbank files in any order.")
+  parser.add_argument('-g', '--game', choices=['oot', 'mm'], required=True, help="Specify the source game: 'oot' or 'mm'.")
+
+  return parser.parse_args()
+
+# Create date for the XML and filename
 DATE = datetime.datetime.now().replace(microsecond=0).isoformat(' ')
 DATE_FILENAME = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
 
 ''' Classes '''
-# @dataclass
-# class XMLDataEntry:
-#   enum_tag:  XMLTags
-#   xml_tag:   str
-#   audiobank: object = None
-#   bankmeta:  object = None
-#   xml_list:  list[dict] = field(default_factory=list)
-
-#   def __post_init__(self):
-#     self.parent_tag = self.enum_tag.value
-
-#     filled_objects = [self.audiobank, self.bankmeta, self.xml_list]
-#     if sum(1 for obj in filled_objects if obj is not None and obj != []) != 1:
-#       raise ValueError("Exactly one audiobank object, bankmeta object, or XML dictionary list must be provided.")
-
-#     self._populate_xml_list()
-
-#   def _populate_xml_list(self):
-#     if self.bankmeta:
-#       self.xml_list = getattr(self.bankmeta, f'{self.parent_tag}_xml', [])
-#     elif self.audiobank:
-#       self.xml_list = getattr(self.audiobank, f'{self.parent_tag}_xml', [])
-
-#   def get_address(self) -> str:
-#     address_map = {
-#       XMLTags.ABDRUMLIST: ("drumlist", "num_drum"),
-#       XMLTags.ABSFXLIST:  ("sfxlist",  "num_sfx"),
-#     }
-
-#     if self.enum_tag in address_map:
-#       list_attr, num_attr = address_map[self.enum_tag]
-#       list_value = getattr(self.audiobank, list_attr, 0)
-#       if list_value != 0 and getattr(self.audiobank, num_attr, 0) != 0:
-#         return str(list_value)
-#     return ''
-
 @dataclass
 class XMLDataEntry:
   enum_tag: XMLTags
@@ -83,52 +70,9 @@ class XMLDataEntry:
         return str(list_value)
     return ''
 
-''' Helper Functions '''
-def read_binary(filename: str) -> bytearray:
-  with open(filename, 'rb') as file:
-    binary = bytearray(file.read())
-  return binary
-
-def get_nested_attr(obj, attr_chain):
-  for attr in attr_chain.split('.'):
-    obj = getattr(obj, attr)
-  return obj
-
 ''' XML Writing Functions '''
-# def dict_to_xml(tag: str, d: dict, parent: xml.Element = None) -> xml.Element:
-#   element = xml.Element(tag)
-
-#   for key, value in d.items():
-#     # Create a comment if the key is "__comment__"
-#     if key == "__comment__":
-#       comment = xml.Comment(value)
-#       element.append(comment)
-
-#     # Recursion if the value is a dict
-#     elif isinstance(value, dict):
-#       dict_to_xml(key, value, element)
-
-#     # Create multiple separate elements for each list entry
-#     elif isinstance(value, list):
-#       for item in value:
-#         # The items should be dictionaries, so more recursion
-#         child = dict_to_xml(key, item)
-#         element.append(child)
-
-#     else:
-#       element.set(key, str(value) if value is not None else "")
-
-#   # Add each separate item to the parent element
-#   # e.g. prevents multiple <instruments> tags for each instrument <item> tag
-#   if parent is not None:
-#     parent.append(element)
-
-#   return element
-
 def dict_to_xml(tag: str, d, parent: xml.Element = None) -> xml.Element:
-    """
-    Convert a dictionary (or other data types) into XML elements.
-    """
+    ''' Convert nested dictionary to XML '''
     # Ensure we're working with a dictionary or string for the current item
     if isinstance(d, dict):
       element = xml.Element(tag)
@@ -166,6 +110,7 @@ def dict_to_xml(tag: str, d, parent: xml.Element = None) -> xml.Element:
     return element
 
 def create_xml_bank(filename: str, bankmeta: object, audiobank: object) -> None:
+  ''' Build XML file '''
   xml_root = xml.Element('bank')
 
   for key, value in bankmeta.attributes.items():
@@ -193,20 +138,6 @@ def create_xml_bank(filename: str, bankmeta: object, audiobank: object) -> None:
     XMLDataEntry(XMLTags.ALADPCMLOOPS, 'item',   audiobank_xml_data['aladpcmloops'])
   ])
 
-  # xml_data = [
-  #   XMLDataEntry(XMLTags.ABINDEXENTRY, 'struct', bankmeta),
-  #   XMLDataEntry(XMLTags.ABHEADER,     'struct', [{"name": 'ABHeader'}]),
-  #   XMLDataEntry(XMLTags.ABBANK,       'struct', audiobank),
-  #   XMLDataEntry(XMLTags.ABDRUMLIST,   'struct', audiobank),
-  #   XMLDataEntry(XMLTags.ABSFXLIST,    'struct', audiobank),
-  #   XMLDataEntry(XMLTags.INSTRUMENTS,  'item',   audiobank),
-  #   XMLDataEntry(XMLTags.DRUMS,        'item',   audiobank),
-  #   XMLDataEntry(XMLTags.ENVELOPES,    'item',   audiobank),
-  #   XMLDataEntry(XMLTags.SAMPLES,      'item',   audiobank),
-  #   XMLDataEntry(XMLTags.ALADPCMBOOKS, 'item',   audiobank),
-  #   XMLDataEntry(XMLTags.ALADPCMLOOPS, 'item',   audiobank)
-  # ]
-
   for entry in xml_data:
     element = xml.Element(entry.parent_tag)
 
@@ -226,7 +157,7 @@ def create_xml_bank(filename: str, bankmeta: object, audiobank: object) -> None:
     f.write(xml.tostring(xml_comment) + b'\n')
     xml_tree.write(f, encoding='utf-8', xml_declaration=False)
 
-''' BInary Writing Functions '''
+''' Binary Writing Functions '''
 def create_binary_bank(filename: str, bankmeta: object, audiobank: object) -> None:
   bankmeta_bytes = bankmeta.to_bytes()
   bank_bytes = audiobank.to_bytes()
@@ -237,33 +168,68 @@ def create_binary_bank(filename: str, bankmeta: object, audiobank: object) -> No
   with open(f'{filename}_{DATE_FILENAME}.zbank', 'wb') as bank:
     bank.write(bank_bytes)
 
+''' Helper Functions '''
+def read_binary(filename: str) -> bytearray:
+  with open(filename, 'rb') as file:
+    binary = bytearray(file.read())
+  return binary
+
+def get_nested_attr(obj, attr_chain):
+  for attr in attr_chain.split('.'):
+    obj = getattr(obj, attr)
+  return obj
+
 ''' Main Function '''
 def main() -> None:
-  filename = os.path.basename(os.path.splitext(sys.argv[1])[0])
+  args = parse_args()
+  files = args.files
+  game = args.game
 
-  # This is temporary until I add proper file checking
-  ''' From binary zbank and bankmeta '''
-  # bank_bin     = sys.argv[1]
-  # bankmeta_bin = sys.argv[2]
+  if len(files) == 1:
+    [xml_file] = files
+    if not xml_file.lower().endswith('.xml'):
+      print("Error: A single input files must be an XML file.")
+      sys.exit(1)
+    mode = 'xml'
 
-  # bank_data     = read_binary(bank_bin)
-  # bankmeta_data = read_binary(bankmeta_bin)
+  elif len(files) == 2:
+    file1, file2 = files
+    ext1, ext2 = os.path.splitext(file1)[1].lower(), os.path.splitext(file2)[1].lower()
+    extensions: set = {ext1, ext2}
 
-  # bankmeta  = Bankmeta.from_bytes(bankmeta_data)
-  # audiobank = Audiobank.from_bytes(bankmeta, bank_data)
+    if extensions != {'.zbank', '.bankmeta'}:
+      print("Error: For binary mode, you must supply both a .bankmeta and .zbank file.")
+      sys.exit(1)
+    mode = 'binary'
 
-  # create_xml_bank(filename, bankmeta, audiobank)
+    bankmeta_file = file1 if file1.lower().endswith('.bankmeta') else file2
+    bank_file     = file1 if file1.lower().endswith('.zbank') else file2
 
-  ''' From XML '''
-  xml_file = sys.argv[1]
-  tree = xml.parse(xml_file)
+  filename = os.path.basename(os.path.splitext(files[0])[0])
 
-  bank_element = tree.getroot()
+  if mode == 'xml':
+    ''' From XML '''
 
-  bankmeta = Bankmeta.from_xml(bank_element)
-  audiobank = Audiobank.from_xml(bankmeta, bank_element)
+    # Read the XML file
+    tree = xml.parse(files[0])
+    bank_element = tree.getroot()
 
-  create_binary_bank(filename, bankmeta, audiobank)
+    # Create the binary bank and bankmeta
+    bankmeta = Bankmeta.from_xml(bank_element) # Instantiate the bankmeta and collect all its data
+    audiobank = Audiobank.from_xml(bankmeta, bank_element) # Instantiate the audiobank and collect all its data
+    create_binary_bank(filename, bankmeta, audiobank)
+
+  elif mode == 'binary':
+    ''' From binary zbank and bankmeta '''
+
+    # Read the binary files
+    bankmeta_data = read_binary(bankmeta_file)
+    bank_data = read_binary(bank_file)
+
+    # Create the XML bank
+    bankmeta = Bankmeta.from_bytes(bankmeta_data) # Instantiate the bankmeta and collect all its data
+    audiobank = Audiobank.from_bytes(bankmeta, bank_data) # Instantiate the audiobank and collect all its data
+    create_xml_bank(filename, bankmeta, audiobank)
 
 if __name__ == '__main__':
   main()
