@@ -143,7 +143,7 @@ class Instrument: # struct size = 0x20
     ]
 
     instrument_name = cls._get_instrument_name(sample_names)
-    self.name = instrument_name if instrument_name else "Instrument"
+    self.name = instrument_name if instrument_name and instrument_name != "Sample" else "Instrument"
 
     return self
 
