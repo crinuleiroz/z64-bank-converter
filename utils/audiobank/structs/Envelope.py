@@ -28,15 +28,32 @@ Intended Usage:
 '''
 # Import helper functions
 from ...Helpers import *
+from ...EnvelopeNames import VANILLA_ENVELOPES
 
 class Envelope:
   ''' Represents an array of EnvelopePoints '''
   def __init__(self):
+    # Set the default name to be used by the class
+    self.name = "Envelope"
+
     self.offset = 0
     self.index  = -1
 
     # EnvelopePoint array
     self.points = []
+
+  @staticmethod
+  def _get_envelope_name(points):
+    flat = []
+    for delay, arg in points:
+      flat.append(delay)
+      flat.append(arg)
+
+    for name, data in VANILLA_ENVELOPES:
+      if flat == data:
+        return name
+
+    return ""
 
   @classmethod
   def from_bytes(cls, envelope_offset: int, bank_data: bytes, envelope_registry: dict):
@@ -56,13 +73,16 @@ class Envelope:
       if delay < 0:
         break
 
+    envelope_name = cls._get_envelope_name(self.points)
+    self.name = envelope_name if envelope_name else "Envelope"
+
     envelope_registry[envelope_offset] = self
     self.index = len(envelope_registry) - 1
     return self
 
   def to_dict(self) -> dict:
     return {
-      "address": str(self.offset), "name": f"Envelope [{self.index}]",
+      "address": str(self.offset), "name": f"{self.name} [{self.index}]",
       "field": [
         {"name": f"Delay {i//2 + 1}", "datatype": "int16", "ispointer": "0", "isarray": "0", "meaning": "None", "value": f"{self.points[i//2][0]}"}
         if i % 2 == 0 else
