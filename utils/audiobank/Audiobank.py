@@ -36,13 +36,13 @@ Intended Usage:
 '''
 
 # Import Audiobank child structures
-from structs.Instrument import Instrument
-from structs.Drum import Drum
-from structs.Effect import SoundEffect
-from structs.Sample import Sample
-from structs.Envelope import Envelope
-from structs.Loopbook import AdpcmLoop
-from structs.Codebook import AdpcmBook
+from .structs.Instrument import Instrument
+from .structs.Drum import Drum
+from .structs.Effect import SoundEffect
+from .structs.Sample import Sample
+from .structs.Envelope import Envelope
+from .structs.Loopbook import AdpcmLoop
+from .structs.Codebook import AdpcmBook
 
 # Import XML parsing functions and helper functions
 from ..XMLParser import *
