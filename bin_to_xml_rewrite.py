@@ -1,32 +1,23 @@
+''' Placeholder '''
+
 import os
 import sys
 import datetime
 from dataclasses import dataclass, field
-from enum import Enum
 import xml.etree.ElementTree as xml
-from utils.AudiobankStructs import Bankmeta, Audiobank, Instrument, Drum, SoundEffect, Envelope, Sample, AdpcmLoop, AdpcmBook
 
-CURRENT_VERSION = '2025.05.23'
+# Import the Bankmeta and Audiobank
+from utils.audiobank.Audiobank import Bankmeta, Audiobank
+
+# Import the XML Tag enum
+from utils.Enums import XMLTags
+
+CURRENT_VERSION = '2025.05.24'
 
 DATE = datetime.datetime.now().replace(microsecond=0).isoformat(' ')
 DATE_FILENAME = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
 
-'''
-|- Classes -|
-'''
-class XMLTags(Enum):
-  ABINDEXENTRY = 'abindexentry'
-  ABHEADER     = 'abheader'
-  ABBANK       = 'abbank'
-  ABDRUMLIST   = 'abdrumlist'
-  ABSFXLIST    = 'absfxlist'
-  INSTRUMENTS  = 'instruments'
-  DRUMS        = 'drums'
-  ENVELOPES    = 'envelopes'
-  SAMPLES      = 'samples'
-  ALADPCMLOOPS = 'aladpcmloops'
-  ALADPCMBOOKS = 'aladpcmbooks'
-
+''' Classes '''
 # @dataclass
 # class XMLDataEntry:
 #   enum_tag:  XMLTags
@@ -92,57 +83,18 @@ class XMLDataEntry:
         return str(list_value)
     return ''
 
-'''
-|- Functions -|
-'''
+''' Helper Functions '''
 def read_binary(filename: str) -> bytearray:
   with open(filename, 'rb') as file:
     binary = bytearray(file.read())
-    file.close()
-
   return binary
-
-def align_to_16(data: int) -> int:
-  return (data + 0x0F) & ~0x0F # or (size + 0xF) // 0x10 * 0x10
-
-def add_padding_to_16(packed_data: bytearray) -> bytearray:
-  padding: int = (-len(packed_data)) & 0x0F # or (0x10 - (size % 0x10)) % 0x10
-
-  return packed_data + b'\x00' * padding
-
-def read_at_offset(data: bytearray, offset: int, length: int) -> bytearray:
-  return data[offset:offset + length]
 
 def get_nested_attr(obj, attr_chain):
   for attr in attr_chain.split('.'):
     obj = getattr(obj, attr)
   return obj
 
-def append_if_unique(value: int, target_list: list[int]) -> None:
-  if value not in target_list and value != 0:
-      target_list.append(value)
-
-def index_addresses(output: dict[int, int], *addresses: int) -> int | tuple[int, ...]:
-  indexes = []
-
-  current_index = len(output) - 1
-
-  for address in addresses:
-    if address == 0:
-      indexes.append(-1)
-      continue
-
-    if address not in output:
-      current_index += 1
-      output[address] = current_index
-
-    indexes.append(output[address])
-
-  return tuple(indexes) if len(indexes) > 1 else indexes[0]
-
-'''
-|- Write to XML -|
-'''
+''' XML Writing Functions '''
 # def dict_to_xml(tag: str, d: dict, parent: xml.Element = None) -> xml.Element:
 #   element = xml.Element(tag)
 
@@ -274,6 +226,7 @@ def create_xml_bank(filename: str, bankmeta: object, audiobank: object) -> None:
     f.write(xml.tostring(xml_comment) + b'\n')
     xml_tree.write(f, encoding='utf-8', xml_declaration=False)
 
+''' BInary Writing Functions '''
 def create_binary_bank(filename: str, bankmeta: object, audiobank: object) -> None:
   bankmeta_bytes = bankmeta.to_bytes()
   bank_bytes = audiobank.to_bytes()
@@ -284,9 +237,7 @@ def create_binary_bank(filename: str, bankmeta: object, audiobank: object) -> No
   with open(f'{filename}_{DATE_FILENAME}.zbank', 'wb') as bank:
     bank.write(bank_bytes)
 
-'''
-|- Main Function -|
-'''
+''' Main Function '''
 def main() -> None:
   filename = os.path.basename(os.path.splitext(sys.argv[1])[0])
 
