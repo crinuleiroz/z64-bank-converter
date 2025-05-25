@@ -83,12 +83,15 @@ class Envelope:
   def to_dict(self) -> dict:
     return {
       "address": str(self.offset), "name": f"{self.name} [{self.index}]",
-      "field": [
-        {"name": f"Time or Opcode {i//2 + 1}", "datatype": "int16", "ispointer": "0", "isarray": "0", "meaning": "None", "value": f"{self.points[i//2][0]}"}
-        if i % 2 == 0 else
-        {"name": f"Amp or Arg {i//2 + 1}", "datatype": "int16", "ispointer": "0", "isarray": "0", "meaning": "None", "value": f"{self.points[i//2][1]}"}
-        for i in range(len(self.points) * 2) # There are half the tuples as there are actual values
-      ]
+      "struct": {
+        "name": "ABEnvelope",
+        "field": [
+          {"name": f"Time or Opcode {i//2 + 1}", "datatype": "int16", "ispointer": "0", "isarray": "0", "meaning": "None", "value": f"{self.points[i//2][0]}"}
+          if i % 2 == 0 else
+          {"name": f"Amp or Arg {i//2 + 1}", "datatype": "int16", "ispointer": "0", "isarray": "0", "meaning": "None", "value": f"{self.points[i//2][1]}"}
+          for i in range(len(self.points) * 2) # There are half the tuples as there are actual values
+        ]
+      }
     }
 
   @classmethod
