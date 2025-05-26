@@ -47,6 +47,7 @@ from .structs.Codebook import AdpcmBook
 # Import XML parsing functions and helper functions
 from ..XMLParser import *
 from ..Helpers import *
+from ..Enums import *
 
 class Bankmeta:
   ''' Represents an instrument bank's metadata '''
@@ -121,6 +122,22 @@ class Bankmeta:
           {"name": "NUM_SFX", "datatype": "uint16", "ispointer": "0", "isarray": "0", "meaning": "NUM_SFX", "value": str(self.num_effects)}
       ]
     }
+
+  @classmethod
+  def from_yaml(cls, bankmeta_dict: dict):
+    self = cls()
+
+    self.address         = bankmeta_dict['address']
+    self.size            = bankmeta_dict['size']
+    self.sample_medium   = resolve_enum(AudioStorageMedium, bankmeta_dict['sample medium'])
+    self.seq_player      = resolve_enum(SequencePlayerID, bankmeta_dict['sequence player'])
+    self.table_id        = bankmeta_dict['audiotable id']
+    self.font_id         = resolve_enum(SoundfontID, bankmeta_dict['soundfont id'])
+    self.num_instruments = bankmeta_dict['NUM_INSTRUMENTS']
+    self.num_drums       = bankmeta_dict['NUM_DRUMS']
+    self.num_effects     = bankmeta_dict['NUM_EFFECTS']
+
+    return self
 
   @property
   def attributes(self):
@@ -553,6 +570,82 @@ class Audiobank:
   @property
   def aladpcmloops_xml(self):
     return self.to_xml()["aladpcmloops"]
+
+  @classmethod
+  def from_yaml(cls, bankmeta: object, bank_dict: dict):
+    self = cls()
+    self.bankmeta = bankmeta
+    self.envelope_registry = {}
+    self.sample_registry   = {}
+    self.loopbook_registry = {}
+    self.codebook_registry = {}
+
+    # Ensure indices are correct if null pointers are not included
+    instrument_map = {int(k): v for k,v in bank_dict['instrument list'].items()}
+    self.instrument_index_map = [instrument_map.get(i, -1) for i in range(bankmeta.num_instruments)]
+
+    # Ensure indices are correct if null pointers are not included
+    drum_map = {int(k): v for k,v in bank_dict['drum list'].items()}
+    self.drum_index_map = [drum_map.get(i, -1) for i in range(bankmeta.num_drums)]
+
+    # Ignore effects for now, they are a bit more complex
+
+    # Create everything in reverse order because yaml uses indices instead of offsets
+    codebooks_dict = bank_dict.get('codebooks')
+    if codebooks_dict is not None:
+      for i, item in enumerate(codebooks_dict):
+        if item is None:
+          continue
+        codebook = AdpcmBook.from_yaml(item)
+        codebook.index = i
+        self.codebook_registry[i] = codebook
+
+    loopbooks_dict = bank_dict.get('loopbooks')
+    if loopbooks_dict is not None:
+      for i, item in enumerate(loopbooks_dict):
+        if item is None:
+          continue
+        loopbook = AdpcmLoop.from_yaml(item)
+        loopbook.index = i
+        self.loopbook_registry[i] = loopbook
+
+    samples_dict = bank_dict.get('samples')
+    if samples_dict is not None:
+      for i, item in enumerate(samples_dict):
+        if item is None:
+          continue
+        sample = Sample.from_yaml(item, self.loopbook_registry, self.codebook_registry)
+        sample.index = i
+        self.sample_registry[i] = sample
+
+    envelope_dict = bank_dict.get('envelopes')
+    if envelope_dict is not None:
+      for i, item in enumerate(envelope_dict):
+        if item is None:
+          continue
+        envelope = Envelope.from_yaml(item)
+        envelope.index = i
+        self.envelope_registry[i] = envelope
+
+    drums_dict = bank_dict.get('drums')
+    if drums_dict is not None:
+      for i, item in enumerate(drums_dict):
+        if item is None:
+          continue
+        drum = Drum.from_yaml(item, self.envelope_registry, self.sample_registry)
+        drum.index = i
+        self.drums.append(drum)
+
+    instruments_dict = bank_dict.get('instruments')
+    if instruments_dict is not None:
+      for i, item in enumerate(instruments_dict):
+        if item is None:
+          continue
+        instrument = Instrument.from_yaml(item, self.envelope_registry, self.sample_registry)
+        instrument.index = i
+        self.instruments.append(instrument)
+
+    return self
 
   def update_internal_offsets(self):
     for instrument in self.instruments:
