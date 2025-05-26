@@ -36,6 +36,9 @@ from itertools import islice
 # Import helper functions
 from ...Helpers import *
 
+# Import flow style class
+from ...YAMLSerializer import FlowStyleList
+
 class AdpcmBook: # struct size = 0x8 + (0x08 * order * num_predictors)
   ''' Represents an ADPCM codebook structure in an instrument bank '''
   def __init__(self):
@@ -141,6 +144,20 @@ class AdpcmBook: # struct size = 0x8 + (0x08 * order * num_predictors)
         raise ValueError() # Must have 16 predictors
 
     return self
+
+  def to_yaml(self) -> dict:
+    data = {
+      "order": self.order,
+      "NUM_PREDICTORS": self.num_predictors
+    }
+
+    predictors = []
+    for array in self.predictor_arrays:
+      predictors.append(FlowStyleList(array))
+
+    data['predictors'] = predictors
+
+    return data
 
   @property
   def struct_size(self) -> int:
