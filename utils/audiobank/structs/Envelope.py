@@ -30,6 +30,9 @@ Intended Usage:
 from ...Helpers import *
 from ...EnvelopeNames import VANILLA_ENVELOPES
 
+# Import opcodes enum
+from ...Enums import EnvelopeOpcodes
+
 class Envelope:
   ''' Represents an array of EnvelopePoints '''
   def __init__(self):
@@ -70,7 +73,7 @@ class Envelope:
       self.points.append((delay, arg))
       i += 4
 
-      if delay < 0:
+      if delay < 0 and arg >= 0:
         break
 
     envelope_name = cls._get_envelope_name(self.points)
@@ -86,9 +89,9 @@ class Envelope:
       "struct": {
         "name": "ABEnvelope",
         "field": [
-          {"name": f"Time or Opcode {i//2 + 1}", "datatype": "int16", "ispointer": "0", "isarray": "0", "meaning": "None", "value": f"{self.points[i//2][0]}"}
+          {"name": f"Delay {i//2 + 1}", "datatype": "int16", "ispointer": "0", "isarray": "0", "meaning": "None", "value": f"{self.points[i//2][0]}"}
           if i % 2 == 0 else
-          {"name": f"Amp or Arg {i//2 + 1}", "datatype": "int16", "ispointer": "0", "isarray": "0", "meaning": "None", "value": f"{self.points[i//2][1]}"}
+          {"name": f"Argument {i//2 + 1}", "datatype": "int16", "ispointer": "0", "isarray": "0", "meaning": "None", "value": f"{self.points[i//2][1]}"}
           for i in range(len(self.points) * 2) # There are half the tuples as there are actual values
         ]
       }
@@ -110,6 +113,18 @@ class Envelope:
     raw = struct.pack('>' + 'h' * len(flat_values), * flat_values)
 
     return add_padding_to_16(raw)
+
+  @classmethod
+  def from_yaml(cls, envelope_dict: dict):
+    self = cls()
+    points = envelope_dict.get('points')
+
+    self.points = []
+    for delay, arg in points:
+      delay = resolve_enum(EnvelopeOpcodes, delay)
+      self.points.append((delay, arg))
+
+    return self
 
   @property
   def struct_size(self) -> int:
