@@ -175,7 +175,7 @@ class Drum: # struct size = 0x10
 
   def to_yaml(self) -> dict:
     return {
-      "name": self.name,
+      "name": f"{self.name} [{self.index}]",
       "decay index": self.decay_index,
       "pan": self.pan,
       "relocated": bool(self.is_relocated),
