@@ -137,7 +137,7 @@ class Drum: # struct size = 0x10
 
     self.sample_tuning = data['sample']['tuning']
 
-    self.sample = sample_registry[data['sample']['sample']]
+    self.sample = sample_registry[data['sample']['sample']] # Can not be unset
     self.envelope = envelope_registry[data['envelope']] if data['envelope'] != -1 else None
 
     return self
@@ -152,6 +152,26 @@ class Drum: # struct size = 0x10
       self.sample_tuning,
       self.envelope_offset
     )
+
+  @classmethod
+  def from_yaml(cls, drum_dict: dict, envelope_registry: dict, sample_registry: dict):
+    self = cls()
+
+    self.decay_index  = drum_dict['decay index']
+    self.pan          = drum_dict['pan']
+    self.is_relocated = int(drum_dict['relocated']) # boolean
+
+    self.sample_tuning = drum_dict['sample']['tuning']
+
+    self.sample = sample_registry[drum_dict['sample']['index']] # Can not be unset
+
+    # Ensure envelope index defaults if not included
+    envelope_index = drum_dict.get('envelope', {}).get('index', -1)
+    envelope_index = -1 if envelope_index is None else envelope_index
+
+    self.envelope = envelope_registry[envelope_index] if envelope_index != -1 else None
+
+    return self
 
 if __name__ == '__main__':
   pass
