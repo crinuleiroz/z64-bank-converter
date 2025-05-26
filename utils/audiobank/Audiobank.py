@@ -130,15 +130,28 @@ class Bankmeta:
     # All fields can be optional and will default except NUM_INSTRUMENTS, and NUM_DRUMS
     self.address         = bankmeta_dict.get('audiobank offset', 0)
     self.size            = bankmeta_dict.get('size', 0)
-    self.sample_medium   = resolve_enum(AudioStorageMedium, bankmeta_dict.get('storage medium', 0))
-    self.seq_player      = resolve_enum(SequencePlayerID, bankmeta_dict.get('sequence player', 2))
+    self.sample_medium   = resolve_enum_value(AudioStorageMedium, bankmeta_dict.get('storage medium', 0))
+    self.seq_player      = resolve_enum_value(SequencePlayerID, bankmeta_dict.get('sequence player', 2))
     self.table_id        = bankmeta_dict.get('audiotable id', 1)
-    self.font_id         = resolve_enum(SoundfontID, bankmeta_dict.get('soundfont id', "DEFAULT"))
+    self.font_id         = resolve_enum_value(SoundfontID, bankmeta_dict.get('soundfont id', "DEFAULT"))
     self.num_instruments = bankmeta_dict['NUM_INSTRUMENTS']
     self.num_drums       = bankmeta_dict['NUM_DRUMS']
     self.num_effects     = bankmeta_dict.get('NUM_EFFECTS', 0)
 
     return self
+
+  def to_yaml(self) -> dict:
+    return {
+      "audiobank offset": self.address,
+      "size": self.size,
+      "storage medium": resolve_enum_name(AudioStorageMedium, self.sample_medium),
+      "sequence player": resolve_enum_name(SequencePlayerID, self.seq_player),
+      "audiotable id": self.table_id,
+      "soundfont id": resolve_enum_name(SoundfontID, self.font_id),
+      "NUM_INSTRUMENTS": self.num_instruments,
+      "NUM_DRUMS": self.num_drums,
+      "NUM_EFFECTS": self.num_effects
+    }
 
   @property
   def attributes(self):
@@ -647,6 +660,47 @@ class Audiobank:
         self.instruments.append(instrument)
 
     return self
+
+  def to_yaml(self) -> dict:
+    instrument_list: dict = {}
+    if self.bankmeta.num_instruments != 0:
+      valid_index = 0
+      for i, offset in enumerate(self.instrument_offsets):
+        if offset == 0:
+          continue
+        else:
+          instrument_list[i] = valid_index
+          valid_index += 1
+
+    drum_list: dict = {}
+    if self.bankmeta.num_drums != 0:
+      valid_index = 0
+      for i, offset in enumerate(self.drum_offsets):
+        if offset == 0:
+          continue
+        else:
+          drum_list[i] = valid_index
+          valid_index += 1
+
+    # Ignore effects for now
+
+    instruments = [inst.to_yaml() for inst in self.instruments if inst is not None]
+    drums       = [drum.to_yaml() for drum in self.drums if drum is not None]
+    samples     = [sample.to_yaml() for sample in self.sample_registry.values()]
+    envelopes   = [envelope.to_yaml() for envelope in self.envelope_registry.values()]
+    loopbooks   = [loopbook.to_yaml() for loopbook in self.loopbook_registry.values()]
+    codebooks   = [codebook.to_yaml() for codebook in self.codebook_registry.values()]
+
+    return {
+      "instrument list": instrument_list,
+      "drum list": drum_list,
+      "instruments": instruments,
+      "drums": drums,
+      "envelopes": envelopes,
+      "samples": samples,
+      "loopbooks": loopbooks,
+      "codebooks": codebooks,
+    }
 
   def update_internal_offsets(self):
     for instrument in self.instruments:
