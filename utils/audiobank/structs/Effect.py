@@ -84,7 +84,7 @@ class SoundEffect:
 
   def to_yaml(self) -> dict:
     return {
-      "name": self.sample.name,
+      "name": f"{self.sample.name} [{self.index}]",
       "sample": {
         "index": self.sample.index,
         "tuning": self.sample_tuning
