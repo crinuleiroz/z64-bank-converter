@@ -154,8 +154,8 @@ class Instrument: # struct size = 0x20
         "name": "ABInstrument",
         "field": [
           {"name": "Relocated (Bool)", "datatype": "uint8", "ispointer": "0", "isarray": "0", "meaning": "None", "value": str(self.is_relocated)},
-          {"name": "Key Region Low (Max range)", "datatype": "uint8", "ispointer": "0", "isarray": "0", "meaning": "None", "value": str(self.key_region_low)},
-          {"name": "Key Region High (Min range)", "datatype": "uint8", "ispointer": "0", "isarray": "0", "meaning": "None", "value": str(self.key_region_high)},
+          {"name": "Key Region Low (Max Range)", "datatype": "uint8", "ispointer": "0", "isarray": "0", "meaning": "None", "value": str(self.key_region_low)},
+          {"name": "Key Region High (Min Range)", "datatype": "uint8", "ispointer": "0", "isarray": "0", "meaning": "None", "value": str(self.key_region_high)},
           {"name": "Decay Index", "datatype": "uint8", "ispointer": "0", "isarray": "0", "meaning": "None", "value": str(self.decay_index)},
           {"name": "Envelope Pointer","datatype": "uint32","ispointer": "1","ptrto": "ABEnvelope","isarray": "0","meaning": "Ptr Envelope","value": str(self.envelope_offset),"index": str(self.envelope.index)},
           {"name": "Sample Pointer Array", "datatype": "ABSound", "ispointer": "0", "isarray": "1", "arraylenfixed": "3", "meaning": "List of 3 Sounds for Splits",
@@ -226,6 +226,36 @@ class Instrument: # struct size = 0x20
       self.high_sample_offset,
       self.high_sample_tuning
     )
+
+  @classmethod
+  def from_yaml(cls, instrument_dict: dict, envelope_registry: dict, sample_registry: dict):
+    self = cls()
+
+    self.is_relocated    = int(instrument_dict['relocated']) # boolean
+    self.key_region_low  = instrument_dict['key region low']
+    self.key_region_high = instrument_dict['key region high']
+    self.decay_index     = instrument_dict['decay index']
+
+    # Ensure envelope index defaults if not included
+    envelope_index = instrument_dict.get('envelope', {}).get('index', -1)
+    envelope_index = -1 if envelope_index is None else envelope_index
+
+    self.envelope = envelope_registry[envelope_index] if envelope_index != -1 else None
+
+    samples = instrument_dict['samples']
+    def get_sample(name):
+      # i: index, t: tuning, o: sample object
+      s = samples.get(name, {})
+      i = s.get('index', -1)
+      t = s.get('tuning', 0.0)
+      o = sample_registry[i] if i != -1 else None
+      return o, t
+
+    self.low_sample, self.low_sample_tuning   = get_sample('low sample')
+    self.prim_sample, self.prim_sample_tuning = get_sample('prim sample')
+    self.high_sample, self.high_sample_tuning = get_sample('high sample')
+
+    return self
 
 if __name__ == '__main__':
   pass
