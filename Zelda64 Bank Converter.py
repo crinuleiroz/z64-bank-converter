@@ -80,6 +80,13 @@ def parse_args():
     required=True,
     help="specifies which game's sample and envelope names the converter will use for XML files"
   )
+  parser.add_argument(
+    '-o',
+    '--output',
+    choices=['xml', 'yaml'],
+    required=False,
+    help="specifies the output type when converting from binary files (defaults to xml)"
+  )
 
   return parser.parse_args()
 
@@ -246,6 +253,7 @@ def main() -> None:
   args = parse_args()
   files = args.files
   game = args.game
+  out_type = args.output
 
   if len(files) == 1:
     [file] = files
@@ -321,8 +329,11 @@ def main() -> None:
     sample_struct.DETECTED_GAME = game
 
     audiobank = Audiobank.from_bytes(bankmeta, bank_data) # Instantiate the audiobank and collect all its data
-    create_xml_bank(filename, bankmeta, audiobank, game)
-    create_yaml_bank(filename, bankmeta, audiobank)
+
+    if out_type == 'yaml':
+      create_yaml_bank(filename, bankmeta, audiobank)
+    else:
+      create_xml_bank(filename, bankmeta, audiobank, game)
 
 if __name__ == '__main__':
   main()
