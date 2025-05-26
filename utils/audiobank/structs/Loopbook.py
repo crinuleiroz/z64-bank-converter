@@ -30,6 +30,9 @@ Intended Usage:
 # Import helper functions
 from ...Helpers import *
 
+# Imoprt flow style class
+from ...YAMLSerializer import FlowStyleList
+
 class AdpcmLoop: # struct size = 0x10 or 0x30
   ''' Represents an ADPCM loopbook structure in an instrument bank '''
   def __init__(self):
@@ -141,6 +144,20 @@ class AdpcmLoop: # struct size = 0x10 or 0x30
     self.predictor_array = loopbook_dict.get('predictors', [])
 
     return self
+
+  def to_yaml(self) -> dict:
+    data =  {
+      "name": self.name,
+      "loop start": self.loop_start,
+      "loop end": self.loop_end,
+      "loop count": self.loop_count,
+      "total samples": self.num_samples,
+    }
+
+    if self.predictor_array:
+      data['predictors'] = FlowStyleList(self.predictor_array)
+
+    return data
 
   @property
   def struct_size(self) -> int:
