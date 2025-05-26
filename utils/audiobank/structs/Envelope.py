@@ -131,7 +131,7 @@ class Envelope:
 
   def to_yaml(self) -> dict:
     return {
-      "name": self.name,
+      "name": f"{self.name} [{self.index}]",
       "points": [
         FlowStyleList([resolve_enum_name(EnvelopeOpcodes, delay), arg])
         for delay, arg in self.points
