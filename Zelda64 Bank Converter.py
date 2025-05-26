@@ -11,7 +11,6 @@ import datetime
 from typing import Final
 from dataclasses import dataclass, field
 import xml.etree.ElementTree as xml
-import yaml
 
 # Ensure /utils is present and can be imported
 try:
@@ -26,6 +25,8 @@ try:
   # Import sample names
   from utils.SampleNames import OOT_SAMPLE_NAMES, MM_SAMPLE_NAMES
   import utils.audiobank.structs.Sample as sample_struct
+
+  from utils.YAMLSerializer import *
 
 except ImportError as e:
   print("Error: One or more required utilities are missing.")
@@ -155,7 +156,7 @@ def dict_to_xml(tag: str, d, parent: xml.Element = None) -> xml.Element:
 
     return element
 
-def create_xml_bank(filename: str, bankmeta: object, audiobank: object, game: str) -> None:
+def create_xml_bank(filename: str, bankmeta: Bankmeta, audiobank: Audiobank, game: str) -> None:
   ''' Build XML file '''
   xml_root = xml.Element('bank')
 
@@ -208,8 +209,18 @@ def create_xml_bank(filename: str, bankmeta: object, audiobank: object, game: st
     f.write(xml.tostring(xml_comment) + b'\n')
     xml_tree.write(f, encoding='utf-8', xml_declaration=False)
 
+''' Yaml Writing Functions '''
+def create_yaml_bank(filename: str, bankmeta: Bankmeta, audiobank: Audiobank):
+  output_yaml = {
+    "bankmeta": bankmeta.to_yaml(),
+    "bank": audiobank.to_yaml()
+  }
+
+  with open(f'BANK_{filename}_{DATE_FILENAME}.yaml', 'w') as f:
+    yaml.dump(output_yaml, f, sort_keys=False)
+
 ''' Binary Writing Functions '''
-def create_binary_bank(filename: str, bankmeta: object, audiobank: object) -> None:
+def create_binary_bank(filename: str, bankmeta: Bankmeta, audiobank: Audiobank) -> None:
   bankmeta_bytes = bankmeta.to_bytes()
   bank_bytes = audiobank.to_bytes()
 
@@ -311,6 +322,7 @@ def main() -> None:
 
     audiobank = Audiobank.from_bytes(bankmeta, bank_data) # Instantiate the audiobank and collect all its data
     create_xml_bank(filename, bankmeta, audiobank, game)
+    create_yaml_bank(filename, bankmeta, audiobank)
 
 if __name__ == '__main__':
   main()
