@@ -257,5 +257,31 @@ class Instrument: # struct size = 0x20
 
     return self
 
+  def to_yaml(self) -> dict:
+    return {
+      "name": self.name,
+      "relocated": bool(self.is_relocated),
+      "key region low": self.key_region_low,
+      "key region high": self.key_region_high,
+      "decay index": self.decay_index,
+      "envelope": {
+        "index": self.envelope.index
+      },
+      "samples": {
+        "low sample": {
+          "index": self.low_sample.index if self.low_sample else -1,
+          "tuning": self.low_sample_tuning
+        },
+        "prim sample": {
+          "index": self.prim_sample.index if self.prim_sample else -1,
+          "tuning": self.prim_sample_tuning
+        },
+        "high sample": {
+          "index": self.high_sample.index if self.high_sample else -1,
+          "tuning": self.high_sample_tuning
+        }
+      }
+    }
+
 if __name__ == '__main__':
   pass
