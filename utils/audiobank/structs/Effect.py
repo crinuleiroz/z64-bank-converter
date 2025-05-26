@@ -81,6 +81,14 @@ class SoundEffect:
       self.sample_offset,
       self.sample_tuning
     )
-  
+
+  def to_yaml(self) -> dict:
+    return {
+      "sample": {
+        "index": self.sample.index,
+        "tuning": self.sample_tuning
+      }
+    }
+
 if __name__ == '__main__':
   pass
