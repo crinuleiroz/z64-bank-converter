@@ -34,6 +34,7 @@ def add_padding_to_16(packed_data: bytearray) -> bytearray:
 
 # Needed for sample names
 def add_table_oot(table_num: int, table_offset: int) -> int:
+  ''' Adds offset for the sample to ensure the proper name is chosen for OOT samples '''
   adjusted_offset = table_offset
 
   if table_num == 2:
@@ -50,12 +51,22 @@ def add_table_oot(table_num: int, table_offset: int) -> int:
   return adjusted_offset
 
 def add_table_mm(table_num: int, table_offset: int) -> int:
+  ''' Adds offset for the sample to ensure the proper name is chosen for MM samples '''
   adjusted_offset = table_offset
 
   if table_num == 2:
     adjusted_offset += 0x538CC0
 
   return adjusted_offset
+
+def resolve_enum(enum_class, identifier):
+  ''' If the value is an enum member, return the value, else return the int '''
+  if isinstance(identifier, str) and identifier in enum_class.__members__:
+    return enum_class[identifier].value
+  elif isinstance(identifier, int):
+    return identifier
+  else:
+    raise TypeError()
 
 # Explose struct
 struct = _struct
