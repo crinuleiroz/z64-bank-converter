@@ -71,7 +71,7 @@ def parse_args():
   parser.add_argument(
     'files',
     nargs='+',
-    help="a SEQ64-compatible XML file or a pair of binary files (.zbank and .bankmeta)"
+    help="a SEQ64-compatible XML file, a YAML bank file, or a pair of binary files (.zbank and .bankmeta)"
   )
   parser.add_argument(
     '-g',
