@@ -64,8 +64,8 @@ CL  : Final = '\x1b[K' # Clear line
 def parse_args():
   parser = argparse.ArgumentParser(
     formatter_class=argparse.RawDescriptionHelpFormatter,
-    usage=f'{GRAY_248}[>_]{RESET} {YELLOW_229}python{RESET} {BLUE_39}{os.path.basename(sys.argv[0])}{RESET} {GRAY_245}[-h]{RESET} {BLUE_39}file [files ...]{RESET} {GRAY_245}-g {{oot, mm}}{RESET}',
-    description='''This script converts Zelda64 instrument banks between binary and SEQ64-compatible XML.'''
+    usage=f'{GRAY_248}[>_]{RESET} {YELLOW_229}python{RESET} {BLUE_39}{os.path.basename(sys.argv[0])}{RESET} {GRAY_245}[-h]{RESET} {BLUE_39}file [files ...]{RESET} {GRAY_245}-g {{oot, mm}} -o {{xml, yaml}}{RESET}',
+    description='''This script converts Zelda64 instrument banks between binary, SEQ64-compatible XML, and a custom YAML bank format.'''
   )
 
   parser.add_argument(
@@ -78,7 +78,7 @@ def parse_args():
     '--game',
     choices=['oot', 'mm'],
     required=True,
-    help="specifies which game's sample and envelope names the converter will use for XML files"
+    help="specifies which game's sample and envelope names the converter will use for XML and YAML files"
   )
   parser.add_argument(
     '-o',
