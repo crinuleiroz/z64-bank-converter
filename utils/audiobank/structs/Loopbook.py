@@ -126,6 +126,22 @@ class AdpcmLoop: # struct size = 0x10 or 0x30
 
     return add_padding_to_16(raw)
 
+  @classmethod
+  def from_yaml(cls, loopbook_dict: dict):
+    # Basically the same as from the XML dictionary
+    self = cls()
+
+    self.loop_start  = loopbook_dict['loop start']
+    self.loop_end    = loopbook_dict['loop end']
+    self.loop_count  = loopbook_dict['loop count']
+    self.num_samples = loopbook_dict['samples']
+
+    assert self.loop_count in (0, -1) # (0, 0xFFFFFFFF)
+
+    self.predictor_array = loopbook_dict.get('predictors', [])
+
+    return self
+
   @property
   def struct_size(self) -> int:
     base = 0x10
