@@ -154,7 +154,7 @@ class Sample: # struct size = 0x10
         """,
         "field": [
           {"name": "Bitfield", "datatype": "uint32", "ispointer": "0", "isarray": "0", "meaning": "None", "value": str(self.bits)},
-          {"name": "Sample Offset in Audiotable", "datatype": "uint32", "ispointer": "0", "ptrto": "ATSample", "isarray": "0", "meaning": "Sample Address (in Sample Table)", "value": str(self.table_offset)},
+          {"name": "Audiotable Address", "datatype": "uint32", "ispointer": "0", "ptrto": "ATSample", "isarray": "0", "meaning": "Sample Address (in Sample Table)", "value": str(self.table_offset)},
           {"name": "Loop Pointer", "datatype": "uint32", "ispointer": "1", "ptrto": "ALADPCMLoop", "isarray": "0", "meaning": "Ptr ALADPCMLoop", "value": str(self.loopbook_offset), "index": str(self.loopbook.index)},
           {"name": "Book Pointer", "datatype": "uint32", "ispointer": "1", "ptrto": "ALADPCMBook", "isarray": "0", "meaning": "Ptr ALADPCMBook", "value": str(self.codebook_offset), "index": str(self.codebook.index)}
         ]
@@ -173,8 +173,14 @@ class Sample: # struct size = 0x10
     self.size         = data['size']
     self.table_offset = data['sample_pointer']
 
-    self.loopbook = loopbook_registry[data['loop']]
-    self.codebook = codebook_registry[data['book']]
+    self.loopbook = loopbook_registry[data['loop']] if data['loop'] != -1 else None
+    self.codebook = codebook_registry[data['book']] if data['book'] != -1 else None
+
+    assert self.loopbook is not None
+    assert self.codebook is not None
+    assert AudioSampleCodec(self.codec) in (AudioSampleCodec.CODEC_ADPCM, AudioSampleCodec.CODEC_SMALL_ADPCM)
+    assert AudioStorageMedium(self.medium) == AudioStorageMedium.MEDIUM_RAM
+    assert not self.is_relocated
 
     return self
 
@@ -194,6 +200,35 @@ class Sample: # struct size = 0x10
       self.loopbook_offset,
       self.codebook_offset
     )
+
+  @classmethod
+  def from_yaml(cls, sample_dict: dict, loopbook_registry: dict, codebook_registry: dict):
+    self = cls()
+
+    # Bitfield should always be present, but adding extra handling for this specifically
+    self.unk_0        = sample_dict.get('bitfield', {}).get('unk_0', 0)
+    self.codec        = resolve_enum(AudioSampleCodec, sample_dict.get('bitfield', {}).get('codec', 0))
+    self.medium       = resolve_enum(AudioStorageMedium, sample_dict.get('bitfield', {}).get('medium', 0))
+    self.is_cached    = int(sample_dict.get('bitfield', {}).get('cached', True))
+    self.is_relocated = int(sample_dict.get('bitfield', {}).get('relocated', False))
+    self.size         = int(sample_dict.get('bitfield', {}).get('size',0xFFFFFF))
+
+    self.table_offset = sample_dict['audiotable offset']
+
+    # Handling in case the indices are not present
+    loopbook_index = sample_dict.get('loopbook', {}).get('index', -1)
+    codebook_index = sample_dict.get('codebook', {}).get('index', -1)
+
+    self.loopbook = loopbook_registry[loopbook_index] if loopbook_index != -1 else None
+    self.codebook = codebook_registry[codebook_index] if codebook_index != -1 else None
+
+    assert self.loopbook is not None
+    assert self.codebook is not None
+    assert AudioSampleCodec(self.codec) in (AudioSampleCodec.CODEC_ADPCM, AudioSampleCodec.CODEC_SMALL_ADPCM)
+    assert AudioStorageMedium(self.medium) == AudioStorageMedium.MEDIUM_RAM
+    assert not self.is_relocated
+
+    return self
 
 if __name__ == '__main__':
   pass
