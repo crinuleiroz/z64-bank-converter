@@ -4,11 +4,17 @@ This is a WIP rewrite of a binary to XML to binary script that converts Zelda64 
 ## What it Does
 This code takes a binary bank and bankmeta file for the Nintendo 64 Zelda games and turns it into a SEQ64 XML file, and vice versa.
 
+## 📋 Requirements
+This script requires the PyYAML module:
+```
+pip install pyyaml
+```
+
 ## 🔧 How to Use
 > 1. Place the following files and folders into the same directory:
 >    - `📄 bin_to_xml_rewrite.py` — the main script.
 >    - `📁/utils` — the utility package that contains necessary modules.
-> 2. Run the script from a terminal using the required arguments with the required input files.
+> 2. Run the script from a terminal using the required arguments with the required input files. Or drag and drop an XML bank file, YAML bank file, or binary bank file pair onto one of the batch scripts.
 
 ### ⌨️ Command-Line Usage
 ```
