@@ -33,6 +33,9 @@ from ...EnvelopeNames import VANILLA_ENVELOPES
 # Import opcodes enum
 from ...Enums import EnvelopeOpcodes
 
+# Import flow style class
+from ...YAMLSerializer import FlowStyleList
+
 class Envelope:
   ''' Represents an array of EnvelopePoints '''
   def __init__(self):
@@ -121,10 +124,19 @@ class Envelope:
 
     self.points = []
     for delay, arg in points:
-      delay = resolve_enum(EnvelopeOpcodes, delay)
+      delay = resolve_enum_value(EnvelopeOpcodes, delay)
       self.points.append((delay, arg))
 
     return self
+
+  def to_yaml(self) -> dict:
+    return {
+      "name": self.name,
+      "points": [
+        FlowStyleList([resolve_enum_name(EnvelopeOpcodes, delay), arg])
+        for delay, arg in self.points
+      ]
+    }
 
   @property
   def struct_size(self) -> int:
