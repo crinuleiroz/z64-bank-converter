@@ -12,15 +12,16 @@ This code takes a binary bank and bankmeta file for the Nintendo 64 Zelda games 
 
 ### ⌨️ Command-Line Usage
 ```
-python <script_name.py> [-h] -g {oot, mm} <input_file> [input_file ...]
+python <script_name.py> [-h] -g {oot, mm} - {xml, yaml} <input_file> [input_file ...]
 ```
 
 #### 📥 Terminal Arguments
 | Argument | Description |
 | --- | --- |
 | `-h` | Displays the help message in the terminal. |
-| `files` | The SEQ64-compatible XML file or `.zbank` and `.bankmeta` file pair. |
-| `-g {oot, mm}` | Specifies which game's sample and envelope names are output for XML. |
+| `files` | The SEQ64-compatible XML file, a YAML bank file or `.zbank` and `.bankmeta` file pair. |
+| `-g {oot, mm}` | Specifies which game's sample and envelope names are output for XML and YAML. |
+| `-o {xml, yaml}` | Specifies the output file type for binary to XML or YAML conversion. (Default: XML) |
 
 > [!CAUTION]
 > If your script or file names contain spaces, they must be enclosed in quotes.
