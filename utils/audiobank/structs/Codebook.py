@@ -49,7 +49,7 @@ class AdpcmBook: # struct size = 0x8 + (0x08 * order * num_predictors)
     self.num_predictors = 2
 
     # Predictor arrays
-    self.predictor_arrays = []
+    self.predictor_arrays: list[list[int]] = []
 
   @classmethod
   def from_bytes(cls, codebook_offset: int, bank_data: bytes, codebook_registry: dict):
@@ -123,6 +123,24 @@ class AdpcmBook: # struct size = 0x8 + (0x08 * order * num_predictors)
       raw += struct.pack('>16h', *array)
 
     return add_padding_to_16(raw)
+
+  @classmethod
+  def from_yaml(cls, codebook_dict: dict):
+    # Basically the same as from the XML dictionary
+    self = cls()
+
+    self.order = codebook_dict['order']
+    self.num_predictors = codebook_dict['NUM_PREDICTORS']
+    self.predictor_arrays = codebook_dict['predictors']
+
+    if len(self.predictor_arrays) != self.num_predictors:
+      raise ValueError() # Must have same number of arrays as there are predictors
+
+    for pred in self.predictor_arrays:
+      if len(pred) != 16:
+        raise ValueError() # Must have 16 predictors
+
+    return self
 
   @property
   def struct_size(self) -> int:
