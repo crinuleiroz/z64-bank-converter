@@ -520,22 +520,11 @@ class Audiobank:
         ]
       }]
 
-    # Instruments
     instruments_xml = [inst.to_dict() for inst in self.instruments if inst is not None]
-
-    # Drums
     drums_xml = [drum.to_dict() for drum in self.drums if drum is not None]
-
-    # Envelopes
     envelopes_xml = [envelope.to_dict() for envelope in self.envelope_registry.values()]
-
-    # Samples
     samples_xml = [sample.to_dict() for sample in self.sample_registry.values()]
-
-    # Aladpcmbooks
     aladpcmbooks_xml = [codebook.to_dict() for codebook in self.codebook_registry.values()]
-
-    # Aladpcmloops
     aladpcmloops_xml = [loopbook.to_dict() for loopbook in self.loopbook_registry.values()]
 
     return {
