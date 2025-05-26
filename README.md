@@ -53,7 +53,8 @@ options:
 - [x] Add vanilla names for instruments and samples for both games
 - [ ] Add sound effect packing for xml to binary
 - [ ] Prettify CLI output
-- [ ] Add parsing from binary to YAML and from YAML to binary
+- [x] Add parsing YAML to binary
+- [ ] Add parsing binary to YAML
 
 ## Required XML Audiobank Structure
 > [!CAUTION]
