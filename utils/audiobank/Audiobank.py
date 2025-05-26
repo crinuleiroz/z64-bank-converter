@@ -127,15 +127,16 @@ class Bankmeta:
   def from_yaml(cls, bankmeta_dict: dict):
     self = cls()
 
-    self.address         = bankmeta_dict['address']
-    self.size            = bankmeta_dict['size']
-    self.sample_medium   = resolve_enum(AudioStorageMedium, bankmeta_dict['sample medium'])
-    self.seq_player      = resolve_enum(SequencePlayerID, bankmeta_dict['sequence player'])
-    self.table_id        = bankmeta_dict['audiotable id']
-    self.font_id         = resolve_enum(SoundfontID, bankmeta_dict['soundfont id'])
+    # All fields can be optional and will default except NUM_INSTRUMENTS, and NUM_DRUMS
+    self.address         = bankmeta_dict.get('address', 0)
+    self.size            = bankmeta_dict.get('size', 0)
+    self.sample_medium   = resolve_enum(AudioStorageMedium, bankmeta_dict.get('sample medium', 0))
+    self.seq_player      = resolve_enum(SequencePlayerID, bankmeta_dict.get('sequence player', 2))
+    self.table_id        = bankmeta_dict.get('audiotable id', 1)
+    self.font_id         = resolve_enum(SoundfontID, bankmeta_dict.get('soundfont id', "DEFAULT"))
     self.num_instruments = bankmeta_dict['NUM_INSTRUMENTS']
     self.num_drums       = bankmeta_dict['NUM_DRUMS']
-    self.num_effects     = bankmeta_dict['NUM_EFFECTS']
+    self.num_effects     = bankmeta_dict.get('NUM_EFFECTS', 0)
 
     return self
 
