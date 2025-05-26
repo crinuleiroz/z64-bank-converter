@@ -173,5 +173,20 @@ class Drum: # struct size = 0x10
 
     return self
 
+  def to_yaml(self) -> dict:
+    return {
+      "name": self.name,
+      "decay index": self.decay_index,
+      "pan": self.pan,
+      "relocated": bool(self.is_relocated),
+      "sample": {
+        "index": self.sample.index,
+        "tuning": self.sample_tuning
+      },
+      "envelope": {
+        "index": self.envelope.index,
+      }
+    }
+
 if __name__ == '__main__':
   pass
