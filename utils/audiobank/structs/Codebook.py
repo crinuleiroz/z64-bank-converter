@@ -147,7 +147,7 @@ class AdpcmBook: # struct size = 0x8 + (0x08 * order * num_predictors)
 
   def to_yaml(self) -> dict:
     data = {
-      "name": self.name,
+      "name": f"{self.name} [{self.index}]",
       "order": self.order,
       "NUM_PREDICTORS": self.num_predictors
     }
