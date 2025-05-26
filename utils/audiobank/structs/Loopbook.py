@@ -147,7 +147,7 @@ class AdpcmLoop: # struct size = 0x10 or 0x30
 
   def to_yaml(self) -> dict:
     data =  {
-      "name": self.name,
+      "name": f"{self.name} [{self.index}]",
       "loop start": self.loop_start,
       "loop end": self.loop_end,
       "loop count": self.loop_count,
