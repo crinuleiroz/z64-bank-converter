@@ -232,7 +232,7 @@ class Sample: # struct size = 0x10
 
   def to_yaml(self) -> dict:
     return {
-      "name": self.name,
+      "name": f"{self.name} [{self.index}]",
       "bitfield": {
         "unk_0": self.unk_0,
         "codec": AudioSampleCodec(self.codec).name,
