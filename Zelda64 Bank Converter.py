@@ -1,7 +1,7 @@
-''' A script for converting Zelda64 instrument banks between their binary format and the SEQ64-compatible XML format '''
+''' A script for converting Zelda64 instrument banks between their binary format, the SEQ64-compatible XML format, and a similar YAML format '''
 
 # Define current version
-CURRENT_VERSION = '2025.05.25'
+CURRENT_VERSION = '2025.05.26'
 
 # Imports
 import os
@@ -11,6 +11,7 @@ import datetime
 from typing import Final
 from dataclasses import dataclass, field
 import xml.etree.ElementTree as xml
+import yaml
 
 # Ensure /utils is present and can be imported
 try:
@@ -236,11 +237,14 @@ def main() -> None:
   game = args.game
 
   if len(files) == 1:
-    [xml_file] = files
-    if not xml_file.lower().endswith('.xml'):
-      print("Error: A single input files must be an XML file.")
+    [file] = files
+    if file.lower().endswith('.xml'):
+      mode = 'xml'
+    elif file.lower().endswith('.yaml') or file.lower().endswith('.yml'):
+      mode = 'yaml'
+    else:
+      print("Error: A single input files must be an XML or YAML file.")
       sys.exit(1)
-    mode = 'xml'
 
   elif len(files) == 2:
     file1, file2 = files
@@ -276,6 +280,21 @@ def main() -> None:
     sample_struct.DETECTED_GAME = game
 
     audiobank = Audiobank.from_xml(bankmeta, bank_element) # Instantiate the audiobank and collect all its data
+    create_binary_bank(filename, bankmeta, audiobank)
+
+  if mode == 'yaml':
+    with open(file, 'r') as f:
+      data = yaml.safe_load(f)
+
+    bankmeta_dict = data.get('bankmeta')
+    bank_dict = data.get('bank')
+
+    if not bankmeta_dict or not bank_dict:
+      raise Exception() # Empty dictionaries
+
+    bankmeta = Bankmeta.from_yaml(bankmeta_dict)
+    audiobank = Audiobank.from_yaml(bankmeta, bank_dict)
+
     create_binary_bank(filename, bankmeta, audiobank)
 
   elif mode == 'binary':
