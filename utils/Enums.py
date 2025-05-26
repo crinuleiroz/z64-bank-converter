@@ -59,5 +59,25 @@ class AudioStorageMedium(IntEnum):
   MEDIUM_CART       = 2
   MEDIUM_DISK_DRIVE = 3
 
+# Sequence pLayer ID enum
+class SequencePlayerID(IntEnum):
+  EFFECTS      = 0
+  FANFARES     = 1
+  BGM          = 2
+  BGM_AMBIENCE = 2 # OOT alias
+  CUTSCENES    = 3
+  AMBIENCE     = 4 # MM-only
+
+# Soundfont ID enum
+class SoundfontID(IntEnum):
+  DEFAULT = 255
+
+# Envelope opcodes enum
+class EnvelopeOpcodes(IntEnum):
+  ADSR_DISABLE =  0
+  ADSR_HANG    = -1
+  ADSR_GOTO    = -2
+  ADSR_RESTART = -3
+
 if __name__ == '__main__':
   pass
