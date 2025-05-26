@@ -130,7 +130,7 @@ class Bankmeta:
     # All fields can be optional and will default except NUM_INSTRUMENTS, and NUM_DRUMS
     self.address         = bankmeta_dict.get('audiobank offset', 0)
     self.size            = bankmeta_dict.get('size', 0)
-    self.sample_medium   = resolve_enum_value(AudioStorageMedium, bankmeta_dict.get('storage medium', 0))
+    self.sample_medium   = resolve_enum_value(AudioStorageMedium, bankmeta_dict.get('storage medium', 2))
     self.seq_player      = resolve_enum_value(SequencePlayerID, bankmeta_dict.get('sequence player', 2))
     self.table_id        = bankmeta_dict.get('audiotable id', 1)
     self.font_id         = resolve_enum_value(SoundfontID, bankmeta_dict.get('soundfont id', "DEFAULT"))
@@ -670,9 +670,7 @@ class Audiobank:
     if self.bankmeta.num_instruments != 0:
       valid_index = 0
       for i, offset in enumerate(self.instrument_offsets):
-        if offset == 0:
-          continue
-        else:
+        if offset != 0:
           instrument_list[i] = valid_index
           valid_index += 1
 
@@ -680,9 +678,7 @@ class Audiobank:
     if self.bankmeta.num_drums != 0:
       valid_index = 0
       for i, offset in enumerate(self.drum_offsets):
-        if offset == 0:
-          continue
-        else:
+        if offset != 0:
           drum_list[i] = valid_index
           valid_index += 1
 
@@ -691,12 +687,9 @@ class Audiobank:
     if self.bankmeta.num_effects != 0:
       valid_index = 0
       for i, effect in enumerate(self.effects):
-        if effect is None:
-          continue
-        else:
+        if effect is not None:
           effect_list[i] = effect.to_yaml()
           valid_index += 1
-
 
     instruments = [inst.to_yaml() for inst in self.instruments if inst is not None]
     drums       = [drum.to_yaml() for drum in self.drums if drum is not None]
@@ -705,17 +698,25 @@ class Audiobank:
     loopbooks   = [loopbook.to_yaml() for loopbook in self.loopbook_registry.values()]
     codebooks   = [codebook.to_yaml() for codebook in self.codebook_registry.values()]
 
-    return {
-      "instrument list": instrument_list,
-      "drum list": drum_list,
-      "effect list": effect_list,
-      "instruments": instruments,
-      "drums": drums,
-      "envelopes": envelopes,
-      "samples": samples,
-      "loopbooks": loopbooks,
-      "codebooks": codebooks,
+    yaml_dict: dict = {}
+
+    entries = {
+      'instrument list': instrument_list,
+      'drum list': drum_list,
+      'effect list': effect_list,
+      'instruments': instruments,
+      'drums': drums,
+      'samples': samples,
+      'envelopes': envelopes,
+      'loopbooks': loopbooks,
+      'codebooks': codebooks,
     }
+
+    for key, value in entries.items():
+      if value:
+        yaml_dict[key] = value
+
+    return yaml_dict
 
   def update_internal_offsets(self):
     for instrument in self.instruments:
