@@ -7,7 +7,7 @@ if "%~2"=="" (
   python "Zelda64 Bank Converter.py" "%~1" -g mm
 ) else (
   :: Two files
-  python "Zelda64 Bank Converter.py" "%~1" "%~2" -g mm
+  python "Zelda64 Bank Converter.py" "%~1" "%~2" -g mm -o xml
 )
 
 endlocal
