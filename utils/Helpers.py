@@ -59,7 +59,7 @@ def add_table_mm(table_num: int, table_offset: int) -> int:
 
   return adjusted_offset
 
-def resolve_enum(enum_class, identifier):
+def resolve_enum_value(enum_class, identifier):
   ''' If the value is an enum member, return the value, else return the int '''
   if isinstance(identifier, str) and identifier in enum_class.__members__:
     return enum_class[identifier].value
@@ -67,6 +67,12 @@ def resolve_enum(enum_class, identifier):
     return identifier
   else:
     raise TypeError()
+
+def resolve_enum_name(enum_class, identifier):
+  try:
+    return enum_class(identifier).name
+  except ValueError:
+    return identifier
 
 # Explose struct
 struct = _struct
