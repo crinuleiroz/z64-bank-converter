@@ -171,6 +171,7 @@ class Audiobank:
 
     self.instrument_index_map = []
     self.drum_index_map       = []
+    self.effect_index_map     = []
 
     self.drums       = []
     self.effects     = []
@@ -602,7 +603,9 @@ class Audiobank:
     drum_map = {int(k): v for k,v in bank_dict['drum list'].items()}
     self.drum_index_map = [drum_map.get(i, -1) for i in range(bankmeta.num_drums)]
 
-    # Ignore effects for now, they are a bit more complex
+    # Ensure the indices are correct if null pointers are not included
+    # effect_map = {int(k): v for k,v in bank_dict['effect list'].items()}
+    # self.effect_index_map = [effect_map.get(i, -1) for i in range(bankmeta.num_effects)]
 
     # Create everything in reverse order because yaml uses indices instead of offsets
     codebooks_dict = bank_dict.get('codebooks')
@@ -662,6 +665,7 @@ class Audiobank:
     return self
 
   def to_yaml(self) -> dict:
+    ''' TO YAML '''
     instrument_list: dict = {}
     if self.bankmeta.num_instruments != 0:
       valid_index = 0
@@ -682,7 +686,17 @@ class Audiobank:
           drum_list[i] = valid_index
           valid_index += 1
 
-    # Ignore effects for now
+    # is it really this simple?
+    effect_list: dict = {}
+    if self.bankmeta.num_effects != 0:
+      valid_index = 0
+      for i, effect in enumerate(self.effects):
+        if effect is None:
+          continue
+        else:
+          effect_list[i] = effect.to_yaml()
+          valid_index += 1
+
 
     instruments = [inst.to_yaml() for inst in self.instruments if inst is not None]
     drums       = [drum.to_yaml() for drum in self.drums if drum is not None]
@@ -694,6 +708,7 @@ class Audiobank:
     return {
       "instrument list": instrument_list,
       "drum list": drum_list,
+      "effect list": effect_list,
       "instruments": instruments,
       "drums": drums,
       "envelopes": envelopes,
