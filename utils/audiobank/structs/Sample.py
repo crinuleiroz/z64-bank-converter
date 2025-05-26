@@ -207,8 +207,8 @@ class Sample: # struct size = 0x10
 
     # Bitfield should always be present, but adding extra handling for this specifically
     self.unk_0        = sample_dict.get('bitfield', {}).get('unk_0', 0)
-    self.codec        = resolve_enum(AudioSampleCodec, sample_dict.get('bitfield', {}).get('codec', 0))
-    self.medium       = resolve_enum(AudioStorageMedium, sample_dict.get('bitfield', {}).get('medium', 0))
+    self.codec        = resolve_enum_value(AudioSampleCodec, sample_dict.get('bitfield', {}).get('codec', 0))
+    self.medium       = resolve_enum_value(AudioStorageMedium, sample_dict.get('bitfield', {}).get('medium', 0))
     self.is_cached    = int(sample_dict.get('bitfield', {}).get('cached', True))
     self.is_relocated = int(sample_dict.get('bitfield', {}).get('relocated', False))
     self.size         = int(sample_dict.get('bitfield', {}).get('size',0xFFFFFF))
@@ -229,6 +229,26 @@ class Sample: # struct size = 0x10
     assert not self.is_relocated
 
     return self
+
+  def to_yaml(self) -> dict:
+    return {
+      "name": self.name,
+      "bitfield": {
+        "unk_0": self.unk_0,
+        "codec": AudioSampleCodec(self.codec).name,
+        "medium": AudioStorageMedium(self.medium).name,
+        "cached": bool(self.is_cached),
+        "relocated": bool(self.is_relocated),
+        "size": self.size
+      },
+      "audiotable offset": self.table_offset,
+      "loopbook": {
+        "index": self.loopbook.index
+      },
+      "codebook": {
+        "index": self.codebook.index
+      }
+    }
 
 if __name__ == '__main__':
   pass
