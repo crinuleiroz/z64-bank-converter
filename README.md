@@ -32,16 +32,19 @@ python <script_name.py> [-h] -g {oot, mm} - {xml, yaml} <input_file> [input_file
 ### ❓ Terminal Help Message
 The output of the help message is below:
 ```
-usage: [>_] python bin_to_xml_rewrite.py [-h] file [files ...] -g {oot, mm}
+usage: [>_] python bin_to_xml_rewrite.py [-h] file [files ...] -g {oot, mm} -o {xml, yaml}
 
-This script converts Zelda64 instrument banks between binary and SEQ64-compatible XML.
+This script converts Zelda64 instrument banks between binary, SEQ64-compatible XML, and a custom YAML bank format.
 
 positional arguments:
-  files                a SEQ64-compatible XML file or a pair of binary files (.zbank and .bankmeta)
+  files                 a SEQ64-compatible XML file, a YAML bank file, or a pair of binary files (.zbank and
+                        .bankmeta)
 
 options:
-  -h, --help           show this help message and exit
-  -g, --game {oot,mm}  specifies which game's sample and envelope names the converter will use for XML files
+  -h, --help            show this help message and exit
+  -g, --game {oot,mm}   specifies which game's sample and envelope names the converter will use for XML and YAML files
+  -o, --output {xml,yaml}
+                        specifies the output type when converting from binary files (defaults to xml)
 ```
 
 ## To-Do
