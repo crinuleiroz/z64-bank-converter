@@ -259,7 +259,7 @@ class Instrument: # struct size = 0x20
 
   def to_yaml(self) -> dict:
     return {
-      "name": self.name,
+      "name": f"{self.name} [{self.index}]",
       "relocated": bool(self.is_relocated),
       "key region low": self.key_region_low,
       "key region high": self.key_region_high,
