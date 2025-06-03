@@ -91,17 +91,33 @@ class Instrument: # struct size = 0x20
 
     if not stripped_names:
       return ""
+      
+    # Split common and unique names
+    unique_stripped = list(dict.fromkeys(stripped_names))
+    
+    # Count occurrences of a shared name
+    counts = {}
+    for name in stripped_names:
+      counts[name] = counts.get(name, 0) + 1
+      
+    shared_names = [name for name, count in counts.items() if count > 1]
+    
+    if len(unique_stripped) == 1:
+      return unique_stripped[0]
+    
+    # if shared_names:
+      # shared = shared_names[0]
+      
+      # Index shared names so they can be excluded, then obtain any unique full names
+      # shared_indices = [i for i, n in enumerate(stripped_names) if n == shared]
+      # unique_full_names = [sample_names[i] for i in range(len(sample_names)) if i not in shared_indices]
 
-    prefix = stripped_names[0]
-    for name in stripped_names[1:]:
-      i = 0
-      while i < len(prefix) and i < len(name) and prefix[i] == name[i]:
-        i += 1
-
-      prefix = prefix[:i]
-
-    return prefix.rstrip(':') if prefix else ""
-
+      # Return the shared sample name plus the full unique name separated by an ampersand
+      # return " & ".join([shared] + unique_full_names)
+      
+    # If all names are unique, return all the samples separated by an ampersand
+    return " & ".join(sample_names)
+    
   @classmethod
   def from_bytes(cls, inst_index: int, inst_offset: int, bank_data: bytes, envelope_registry: dict,
                  sample_registry: dict, loopbook_registry: dict, codebook_registry: dict):
