@@ -1,11 +1,11 @@
 VANILLA_ENVELOPES = [
   # Special Sound Effect Bank Envelopes
-  ('Effects Envelope 1',             [ 1, 32700,     1, 32700, 32700, 32700, -1, 0]),
-  ('Effects Envelope 2',             [ 1,     0,    30, 32700,   690,     0, -1, 0]),
-  ('Effects Envelope 3',             [30, 32700,   690,     0,    -1,     0,  0, 0]),
-  ('Effects Envelope 4',             [ 1, 32727,    30, 29000,   690,     0, -1, 0]),
-  ('Effects Envelope 5',             [ 8, 32700,  5000,     0,    -1,     0,  0, 0]),
-  ('Effects Envelope 6',             [ 8, 32700, 32700, 29430,    -1,     0,  0, 0]),
+  ('Effects Envelope [1]',           [ 1, 32700,     1, 32700, 32700, 32700, -1, 0]),
+  ('Effects Envelope [2]',           [ 1,     0,    30, 32700,   690,     0, -1, 0]),
+  ('Effects Envelope [3]',           [ 0,     0,    30, 32700,   690,     0, -1, 0]),
+  ('Effects Envelope [4]',           [ 1, 32727,    30, 29000,   690,     0, -1, 0]),
+  ('Effects Envelope [5]',           [ 8, 32700,  5000,     0,    -1,     0,  0, 0]),
+  ('Effects Envelope [6]',           [ 8, 32700, 32700, 29430,    -1,     0,  0, 0]),
   
   # ('Effects Envelope 7',             [ 2, 32700,   298, 32700, 32700, 29430, -1, 0]),
   # ('Effects Envelope 8',             [ 2, 32700,     1, 32700, 32700, 29430, -1, 0]),
@@ -13,6 +13,8 @@ VANILLA_ENVELOPES = [
   # ('Effects Envelope 10',            [ 2, 32700,     1, 32700,   421,     0, -1, 0]),
   # ('Effects Envelope 11',            [ 2, 32700,   229,     0,     1,     0, -1, 0]),
   # ('Effects Envelope 12',            [ 2, 32700,     1, 32700,   409,     0, -1, 0]),
+  
+  ('Ambience Envelope',              [ 1, 32700,     0, 32700, 32700, 32700, -1, 0]),
 
   # Common Bank Envelopes
   ('General Use Envelope',           [ 2, 32700,     1, 32700, 32700, 29430, -1, 0]),
