@@ -1,11 +1,11 @@
 VANILLA_ENVELOPES = [
   # Effect Bank 1 Envelopes
-  ('Effects 1 Envelope [1]',           [ 1, 32700,     1, 32700, 32700, 32700, -1, 0]),
-  ('Effects 1 Envelope [2]',           [ 1,     0,    30, 32700,   690,     0, -1, 0]),
-  ('Effects 1 Envelope [3]',           [ 0,     0,    30, 32700,   690,     0, -1, 0]),
-  ('Effects 1 Envelope [4]',           [ 1, 32727,    30, 29000,   690,     0, -1, 0]),
-  ('Effects 1 Envelope [5]',           [ 8, 32700,  5000,     0,    -1,     0,  0, 0]),
-  ('Effects 1 Envelope [6]',           [ 8, 32700, 32700, 29430,    -1,     0,  0, 0]),
+  ('Effects 1 Envelope [1]',         [ 1, 32700,     1, 32700, 32700, 32700, -1, 0]),
+  ('Effects 1 Envelope [2]',         [ 1,     0,    30, 32700,   690,     0, -1, 0]),
+  ('Effects 1 Envelope [3]',         [ 0,     0,    30, 32700,   690,     0, -1, 0]),
+  ('Effects 1 Envelope [4]',         [ 1, 32727,    30, 29000,   690,     0, -1, 0]),
+  ('Effects 1 Envelope [5]',         [ 8, 32700,  5000,     0,    -1,     0,  0, 0]),
+  ('Effects 1 Envelope [6]',         [ 8, 32700, 32700, 29430,    -1,     0,  0, 0]),
   
   # Effect Bank 2 Envelopes
   (),
