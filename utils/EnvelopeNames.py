@@ -8,7 +8,7 @@ VANILLA_ENVELOPES = [
   ('Effects 1 Envelope [6]',         [ 8, 32700, 32700, 29430,    -1,     0,  0, 0]),
   
   # Effect Bank 2 Envelopes
-  (),
+  ('Effects 2 Envelope',             [ 1,     0,     1, 32700, 32700, 32700, -1, 0]),
   
   # Ambience Bank Envelope
   ('Ambience Envelope',              [ 1, 32700,     0, 32700, 32700, 32700, -1, 0]),
