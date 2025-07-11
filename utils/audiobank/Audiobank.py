@@ -100,7 +100,7 @@ class Bankmeta:
         self.address         = data['address']
         self.size            = data['size']
         self.sample_medium   = data['medium']
-        self.cache_load_type = data['cache_type']
+        self.cache_load_type = data['cache_load_type']
         self.table_id_1      = data['table_id_1']
         self.table_id_2      = data['table_id_2']
         self.num_instruments = data['num_instruments']
