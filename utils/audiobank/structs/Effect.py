@@ -30,66 +30,68 @@ Intended Usage:
     'Audiobank' and 'Bankmeta' for full instrument bank conversion.
 '''
 
+
 # Import child structure
 from .Sample import Sample
 
 # Import helper functions
 from ...Helpers import *
 
+
 class SoundEffect:
-  ''' Represents a sound effect (TunedSample structure) in an instrument bank '''
-  def __init__(self):
-    self.offset = 0
-    self.index  = -1
+    ''' Represents a sound effect (TunedSample structure) in an instrument bank '''
+    def __init__(self):
+        self.offset = 0
+        self.index  = -1
 
-    # TunedSample structure
-    self.sample_offset = 0
-    self.sample_tuning = 0.0
+        # TunedSample structure
+        self.sample_offset = 0
+        self.sample_tuning = 0.0
 
-    # Child sample structure
-    self.sample = None
+        # Child sample structure
+        self.sample = None
 
-  @classmethod
-  def from_bytes(cls, effect_index: int, effect_offset: int, bank_data: bytes, sample_registry: dict, loopbook_registry: dict, codebook_registry: dict):
-    self = cls()
-    self.offset = effect_offset
-    self.index = effect_index
+    @classmethod
+    def from_bytes(cls, effect_index: int, effect_offset: int, bank_data: bytes, sample_registry: dict, loopbook_registry: dict, codebook_registry: dict):
+        self = cls()
+        self.offset = effect_offset
+        self.index = effect_index
 
-    (
-      self.sample_offset,
-      self.sample_tuning
-    ) = struct.unpack('>1I1f', bank_data[effect_offset:effect_offset + 0x08])
+        (
+            self.sample_offset,
+            self.sample_tuning
+        ) = struct.unpack('>1I1f', bank_data[effect_offset:effect_offset + 0x08])
 
-    self.sample = Sample.from_bytes(self.sample_offset, bank_data, sample_registry, loopbook_registry, codebook_registry)
+        self.sample = Sample.from_bytes(self.sample_offset, bank_data, sample_registry, loopbook_registry, codebook_registry)
 
-    return self
+        return self
 
-  def to_dict(self) -> dict:
-    return {
-      "datatype": "ABSound", "ispointer": "0", "value": "0",
-      "struct": {"name": "ABSound",
-        "field": [
-          {"name": "Sample Pointer", "datatype": "uint32", "ispointer": "1", "ptrto": "ABSample", "isarray": "0", "meaning": "Ptr Sample", "value": str(self.sample_offset), "index": str(self.sample.index)},
-          {"name": "Sample Tuning", "datatype": "float32", "ispointer": "0", "isarray": "0", "meaning": "None", "value": str(self.sample_tuning)}
-        ]
-      }
-    }
+    def to_dict(self) -> dict:
+        return {
+            "datatype": "ABSound", "ispointer": "0", "value": "0",
+            "struct": {"name": "ABSound",
+                "field": [
+                    {"name": "Sample Pointer", "datatype": "uint32", "ispointer": "1", "ptrto": "ABSample", "isarray": "0", "meaning": "Ptr Sample", "value": str(self.sample_offset), "index": str(self.sample.index)},
+                    {"name": "Sample Tuning", "datatype": "float32", "ispointer": "0", "isarray": "0", "meaning": "None", "value": str(self.sample_tuning)}
+                ]
+            }
+        }
 
-  def to_bytes(self):
-    return struct.pack(
-      '>1I1f',
-      self.sample_offset,
-      self.sample_tuning
-    )
+    def to_bytes(self):
+        return struct.pack(
+            '>1I1f',
+            self.sample_offset,
+            self.sample_tuning
+        )
 
-  def to_yaml(self) -> dict:
-    return {
-      "name": f"{self.sample.name} [{self.index}]",
-      "sample": {
-        "index": self.sample.index,
-        "tuning": self.sample_tuning
-      }
-    }
+    def to_yaml(self) -> dict:
+        return {
+            "name": f"{self.sample.name} [{self.index}]",
+            "sample": {
+                "index": self.sample.index,
+                "tuning": self.sample_tuning
+            }
+        }
 
 if __name__ == '__main__':
-  pass
+    pass

@@ -27,142 +27,147 @@ Intended Usage:
     'Audiobank' and 'Bankmeta' for full instrument bank conversion.
 '''
 
+
 # Import helper functions
 from ...Helpers import *
 
-# Imoprt flow style class
+# Import flow style class
 from ...YAMLSerializer import FlowStyleList
 
+
 class AdpcmLoop: # struct size = 0x10 or 0x30
-  ''' Represents an ADPCM loopbook structure in an instrument bank '''
-  def __init__(self):
-    # Set the default name to be used by the class
-    self.name = "Loopbook"
+    ''' Represents an ADPCM loopbook structure in an instrument bank '''
+    def __init__(self):
+        # Set the default name to be used by the class
+        self.name = "Loopbook"
 
-    self.offset = 0
-    self.index  = -1
+        self.offset = 0
+        self.index  = -1
 
-    self.loop_start  = 0
-    self.loop_end    = 0 # Becomes num_samples when start is 0
-    self.loop_count  = 0 # Only 0 or -1
-    self.num_samples = 0
+        self.loop_start  = 0
+        self.loop_end    = 0 # Becomes num_samples when start is 0
+        self.loop_count  = 0 # Only 0 or -1
+        self.num_samples = 0
 
-    # Predictor array
-    self.predictor_array = []
+        # Predictor array
+        self.predictor_array = []
 
-  @classmethod
-  def from_bytes(cls, loopbook_offset: int, bank_data: bytes, loopbook_registry: dict):
-    if loopbook_offset in loopbook_registry:
-      return loopbook_registry[loopbook_offset]
+    @classmethod
+    def from_bytes(cls, loopbook_offset: int, bank_data: bytes, loopbook_registry: dict):
+        if loopbook_offset in loopbook_registry:
+            return loopbook_registry[loopbook_offset]
 
-    self = cls()
-    self.offset = loopbook_offset
+        self = cls()
+        self.offset = loopbook_offset
 
-    (
-      self.loop_start,
-      self.loop_end,
-      self.loop_count,
-      self.num_samples
-    ) = struct.unpack('>2I 1i 1I', bank_data[loopbook_offset: loopbook_offset + 0x10])
+        (
+            self.loop_start,
+            self.loop_end,
+            self.loop_count,
+            self.num_samples
+        ) = struct.unpack('>2I 1i 1I', bank_data[loopbook_offset: loopbook_offset + 0x10])
 
-    assert self.loop_count in (0, -1) # (0, 0xFFFFFFFF)
+        assert self.loop_count in (0, -1) # (0, 0xFFFFFFFF)
 
-    if self.loop_count != 0:
-      self.predictor_array = list(struct.unpack('>16h', bank_data[loopbook_offset + 0x10:loopbook_offset + 0x30]))
+        if self.loop_count != 0:
+            self.predictor_array = list(struct.unpack('>16h', bank_data[loopbook_offset + 0x10:loopbook_offset + 0x30]))
 
-    loopbook_registry[loopbook_offset] = self
-    self.index = len(loopbook_registry) - 1
-    return self
+        loopbook_registry[loopbook_offset] = self
+        self.index = len(loopbook_registry) - 1
+        return self
 
-  def to_dict(self) -> dict:
-    loopbook_field = []
+    def to_dict(self) -> dict:
+        loopbook_field = []
 
-    if self.loop_count != 0:
-      loopbook_field = [{
-        "datatype": "ALADPCMTail", "ispointer": "0", "value": "0",
-        "struct": {"name": "ALADPCMTail",
-          "field": [
-            {"name": "data", "datatype": "int16", "ispointer": "0", "isarray": "1", "arraylenfixed": "16", "meaning": "None",
-              "element": [
-                {"datatype": "int16", "ispointer": "0", "value": str(predictor)}
-                for predictor in self.predictor_array
-              ]
+        if self.loop_count != 0:
+            loopbook_field = [{
+                "datatype": "ALADPCMTail", "ispointer": "0", "value": "0",
+                "struct": {
+                    "name": "ALADPCMTail",
+                    "field": [
+                        {
+                            "name": "data", "datatype": "int16", "ispointer": "0", "isarray": "1", "arraylenfixed": "16", "meaning": "None",
+                            "element": [
+                                {"datatype": "int16", "ispointer": "0", "value": str(predictor)}
+                                for predictor in self.predictor_array
+                            ]
+                        }
+                    ]
+                }
             }
-          ]
-        }
-      }]
-
-    return {
-      "address": str(self.offset), "name": f"{self.name} [{self.index}]",
-      "struct": {
-        "name": "ALADPCMLoop", "HAS_TAIL": f"{0 if self.loop_count == 0 else 1}",
-        "field": [
-          {"name": "Loop Start", "datatype": "uint32", "ispointer": "0", "isarray": "0", "meaning": "Loop Start", "value": str(self.loop_start)},
-          {"name": "Loop End (Sample Length if Count = 0)", "datatype": "uint32", "ispointer": "0", "isarray": "0", "meaning": "Loop End", "value": str(self.loop_end)},
-          {"name": "Loop Count", "datatype": "int32", "ispointer": "0", "isarray": "0", "meaning": "Loop Count", "defaultval": "-1", "value": str(self.loop_count)},
-          {"name": "Number of Samples", "datatype": "uint32", "ispointer": "0", "isarray": "0", "meaning": "None", "value": str(self.num_samples)},
-          {"name": "Loopbook", "datatype": "ALADPCMTail", "ispointer": "0", "isarray": "1", "arraylenvar": "HAS_TAIL", "meaning": "Tail Data (if Loop Start != 0)", "element": loopbook_field}
         ]
-      }
-    }
 
-  @classmethod
-  def from_dict(cls, data: dict):
-    self = cls()
+        return {
+            "address": str(self.offset), "name": f"{self.name} [{self.index}]",
+            "struct": {
+                "name": "ALADPCMLoop", "HAS_TAIL": f"{0 if self.loop_count == 0 else 1}",
+                "field": [
+                    {"name": "Loop Start", "datatype": "uint32", "ispointer": "0", "isarray": "0", "meaning": "Loop Start", "value": str(self.loop_start)},
+                    {"name": "Loop End (Sample Length if Count = 0)", "datatype": "uint32", "ispointer": "0", "isarray": "0", "meaning": "Loop End", "value": str(self.loop_end)},
+                    {"name": "Loop Count", "datatype": "int32", "ispointer": "0", "isarray": "0", "meaning": "Loop Count", "defaultval": "-1", "value": str(self.loop_count)},
+                    {"name": "Number of Samples", "datatype": "uint32", "ispointer": "0", "isarray": "0", "meaning": "None", "value": str(self.num_samples)},
+                    {"name": "Loopbook", "datatype": "ALADPCMTail", "ispointer": "0", "isarray": "1", "arraylenvar": "HAS_TAIL", "meaning": "Tail Data (if Loop Start != 0)", "element": loopbook_field}
+                ]
+            }
+        }
 
-    self.loop_start  = data['loop_start']
-    self.loop_end    = data['loop_end']
-    self.loop_count  = data['loop_count']
-    self.num_samples = data['num_samples']
+    @classmethod
+    def from_dict(cls, data: dict):
+        self = cls()
 
-    assert self.loop_count in (0, -1) # (0, 0xFFFFFFFF)
+        self.loop_start  = data['loop_start']
+        self.loop_end    = data['loop_end']
+        self.loop_count  = data['loop_count']
+        self.num_samples = data['num_samples']
 
-    self.predictor_array = data.get('predictor_array', [])
+        assert self.loop_count in (0, -1) # (0, 0xFFFFFFFF)
 
-    return self
+        self.predictor_array = data.get('predictor_array', [])
 
-  def to_bytes(self) -> bytes:
-    raw = struct.pack('>2I 1i 1I', self.loop_start, self.loop_end, self.loop_count, self.num_samples)
+        return self
 
-    if self.loop_count != 0:
-      raw += struct.pack('>16h', *self.predictor_array)
+    def to_bytes(self) -> bytes:
+        raw = struct.pack('>2I 1i 1I', self.loop_start, self.loop_end, self.loop_count, self.num_samples)
 
-    return add_padding_to_16(raw)
+        if self.loop_count != 0:
+            raw += struct.pack('>16h', *self.predictor_array)
 
-  @classmethod
-  def from_yaml(cls, loopbook_dict: dict):
-    # Basically the same as from the XML dictionary
-    self = cls()
+        return add_padding_to_16(raw)
 
-    self.loop_start  = loopbook_dict['loop start']
-    self.loop_end    = loopbook_dict['loop end']
-    self.loop_count  = loopbook_dict['loop count']
-    self.num_samples = loopbook_dict['total samples']
+    @classmethod
+    def from_yaml(cls, loopbook_dict: dict):
+        # Basically the same as from the XML dictionary
+        self = cls()
 
-    assert self.loop_count in (0, -1) # (0, 0xFFFFFFFF)
+        self.loop_start  = loopbook_dict['loop start']
+        self.loop_end    = loopbook_dict['loop end']
+        self.loop_count  = loopbook_dict['loop count']
+        self.num_samples = loopbook_dict['total samples']
 
-    self.predictor_array = loopbook_dict.get('predictors', [])
+        assert self.loop_count in (0, -1) # (0, 0xFFFFFFFF)
 
-    return self
+        self.predictor_array = loopbook_dict.get('predictors', [])
 
-  def to_yaml(self) -> dict:
-    data =  {
-      "name": f"{self.name} [{self.index}]",
-      "loop start": self.loop_start,
-      "loop end": self.loop_end,
-      "loop count": self.loop_count,
-      "total samples": self.num_samples,
-    }
+        return self
 
-    if self.predictor_array:
-      data['predictors'] = FlowStyleList(self.predictor_array)
+    def to_yaml(self) -> dict:
+        data =  {
+            "name": f"{self.name} [{self.index}]",
+            "loop start": self.loop_start,
+            "loop end": self.loop_end,
+            "loop count": self.loop_count,
+            "total samples": self.num_samples,
+        }
 
-    return data
+        if self.predictor_array:
+            data['predictors'] = FlowStyleList(self.predictor_array)
 
-  @property
-  def struct_size(self) -> int:
-    base = 0x10
-    return align_to_16(base + (0x20 if self.loop_count != 0 else 0))
+        return data
+
+    @property
+    def struct_size(self) -> int:
+        base = 0x10
+        return align_to_16(base + (0x20 if self.loop_count != 0 else 0))
 
 if __name__ == '__main__':
-  pass
+    pass

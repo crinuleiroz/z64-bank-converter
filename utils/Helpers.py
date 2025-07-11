@@ -26,56 +26,56 @@ import struct as _struct
 
 ''' Helper Functions '''
 def align_to_16(data: int) -> int:
-  return (data + 0x0F) & ~0x0F # or (size + 0xF) // 0x10 * 0x10
+    return (data + 0x0F) & ~0x0F # or (size + 0xF) // 0x10 * 0x10
 
 def add_padding_to_16(packed_data: bytearray) -> bytearray:
-  padding: int = (-len(packed_data)) & 0x0F # or (0x10 - (size % 0x10)) % 0x10
-  return packed_data + b'\x00' * padding
+    padding: int = (-len(packed_data)) & 0x0F # or (0x10 - (size % 0x10)) % 0x10
+    return packed_data + b'\x00' * padding
 
 # Needed for sample names
 def add_table_oot(table_num: int, table_offset: int) -> int:
-  ''' Adds offset for the sample to ensure the proper name is chosen for OOT samples '''
-  adjusted_offset = table_offset
+    ''' Adds offset for the sample to ensure the proper name is chosen for OOT samples '''
+    adjusted_offset = table_offset
 
-  if table_num == 2:
-    adjusted_offset += 0x3FA9E0
-  elif table_num == 3:
-    adjusted_offset += 0x4006B0
-  elif table_num == 4:
-    adjusted_offset += 0x41D760
-  elif table_num == 5:
-    adjusted_offset += 0x427D30
-  elif table_num == 6:
-    adjusted_offset += 0x4377E0
+    if table_num == 2:
+        adjusted_offset += 0x3FA9E0
+    elif table_num == 3:
+        adjusted_offset += 0x4006B0
+    elif table_num == 4:
+        adjusted_offset += 0x41D760
+    elif table_num == 5:
+        adjusted_offset += 0x427D30
+    elif table_num == 6:
+        adjusted_offset += 0x4377E0
 
-  return adjusted_offset
+    return adjusted_offset
 
 def add_table_mm(table_num: int, table_offset: int) -> int:
-  ''' Adds offset for the sample to ensure the proper name is chosen for MM samples '''
-  adjusted_offset = table_offset
+    ''' Adds offset for the sample to ensure the proper name is chosen for MM samples '''
+    adjusted_offset = table_offset
 
-  if table_num == 2:
-    adjusted_offset += 0x538CC0
+    if table_num == 2:
+        adjusted_offset += 0x538CC0
 
-  return adjusted_offset
+    return adjusted_offset
 
 def resolve_enum_value(enum_class, identifier):
-  ''' If the value is an enum member, return the value, else return the int '''
-  if isinstance(identifier, str) and identifier in enum_class.__members__:
-    return enum_class[identifier].value
-  elif isinstance(identifier, int):
-    return identifier
-  else:
-    raise TypeError()
+    ''' If the value is an enum member, return the value, else return the int '''
+    if isinstance(identifier, str) and identifier in enum_class.__members__:
+        return enum_class[identifier].value
+    elif isinstance(identifier, int):
+        return identifier
+    else:
+        raise TypeError()
 
 def resolve_enum_name(enum_class, identifier):
-  try:
-    return enum_class(identifier).name
-  except ValueError:
-    return identifier
+    try:
+        return enum_class(identifier).name
+    except ValueError:
+        return identifier
 
 # Explose struct
 struct = _struct
 
 if __name__ == '__main__':
-  pass
+    pass

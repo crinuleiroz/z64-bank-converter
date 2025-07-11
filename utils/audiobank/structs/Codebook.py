@@ -31,6 +31,7 @@ Intended Usage:
     'Audiobank' and 'Bankmeta' for full instrument bank conversion.
 '''
 
+
 from itertools import islice
 
 # Import helper functions
@@ -39,130 +40,133 @@ from ...Helpers import *
 # Import flow style class
 from ...YAMLSerializer import FlowStyleList
 
+
 class AdpcmBook: # struct size = 0x8 + (0x08 * order * num_predictors)
-  ''' Represents an ADPCM codebook structure in an instrument bank '''
-  def __init__(self):
-    # Set the default name to be used by the class
-    self.name = "Codebook"
+    ''' Represents an ADPCM codebook structure in an instrument bank '''
+    def __init__(self):
+        # Set the default name to be used by the class
+        self.name = "Codebook"
 
-    self.offset = 0
-    self.index  = -1
+        self.offset = 0
+        self.index  = -1
 
-    self.order          = 2
-    self.num_predictors = 2
+        self.order          = 2
+        self.num_predictors = 2
 
-    # Predictor arrays
-    self.predictor_arrays: list[list[int]] = []
+        # Predictor arrays
+        self.predictor_arrays: list[list[int]] = []
 
-  @classmethod
-  def from_bytes(cls, codebook_offset: int, bank_data: bytes, codebook_registry: dict):
-    if codebook_offset in codebook_registry:
-      return codebook_registry[codebook_offset]
+    @classmethod
+    def from_bytes(cls, codebook_offset: int, bank_data: bytes, codebook_registry: dict):
+        if codebook_offset in codebook_registry:
+            return codebook_registry[codebook_offset]
 
-    self = cls()
-    self.offset = codebook_offset
+        self = cls()
+        self.offset = codebook_offset
 
-    (
-      self.order,
-      self.num_predictors
-    ) = struct.unpack('>2I', bank_data[codebook_offset:codebook_offset + 0x8])
+        (
+            self.order,
+            self.num_predictors
+        ) = struct.unpack('>2I', bank_data[codebook_offset:codebook_offset + 0x8])
 
-    assert self.order == 2
-    assert self.num_predictors in (2, 4) # need to recheck vadpcm to see how many are allowed, but generally either 2 or 4
+        assert self.order == 2
+        assert self.num_predictors in (2, 4) # need to recheck vadpcm to see how many are allowed, but generally either 2 or 4
 
-    predictor_data = bank_data[codebook_offset + 0x08:codebook_offset + 0x08 + self.num_predictors * 0x20]
-    array_iter = struct.iter_unpack('>16h', predictor_data)
-    self.predictor_arrays = [list(p) for p in islice(array_iter, self.num_predictors)]
+        predictor_data = bank_data[codebook_offset + 0x08:codebook_offset + 0x08 + self.num_predictors * 0x20]
+        array_iter = struct.iter_unpack('>16h', predictor_data)
+        self.predictor_arrays = [list(p) for p in islice(array_iter, self.num_predictors)]
 
-    codebook_registry[codebook_offset] = self
-    self.index = len(codebook_registry) - 1
-    return self
+        codebook_registry[codebook_offset] = self
+        self.index = len(codebook_registry) - 1
+        return self
 
-  def to_dict(self) -> dict:
-    codebooks = [
-      {
-        "datatype": "ALADPCMPredictor", "ispointer": "0", "value": "0",
-        "struct": {"name": "ALADPCMPredictor",
-          "field" : [
-            {"name": "data", "datatype": "int16", "ispointer": "0", "isarray": "1", "arraylenfixed": "16", "meaning": "None",
-              "element": [
-                {"datatype": "int16", "ispointer": "0", "value": str(predictor)}
-                for predictor in predictor_array
-              ]
+    def to_dict(self) -> dict:
+        codebooks = [
+            {
+                "datatype": "ALADPCMPredictor", "ispointer": "0", "value": "0",
+                "struct": {
+                    "name": "ALADPCMPredictor",
+                    "field" : [
+                        {"name": "data", "datatype": "int16", "ispointer": "0", "isarray": "1", "arraylenfixed": "16", "meaning": "None",
+                            "element": [
+                                {"datatype": "int16", "ispointer": "0", "value": str(predictor)}
+                                for predictor in predictor_array
+                            ]
+                        }
+                    ]
+                }
             }
-          ]
-        }
-      }
-      for predictor_array in self.predictor_arrays
-    ]
-
-    return {
-      "address": str(self.offset), "name": f"{self.name} [{self.index}]",
-      "struct": {"name": "ALADPCMBook", "NUM_PRED": str(self.num_predictors),
-        "field": [
-          {"name": "Order", "datatype": "int32", "ispointer": "0", "isarray": "0", "meaning": "None", "value": str(self.order)},
-          {"name": "Number of Predictors", "datatype": "int32", "ispointer": "0", "isarray": "0", "meaning": "NUM_PRED", "value": str(self.num_predictors)},
-          {"name": "Codebook", "datatype": "ALADPCMPredictor", "ispointer": "0", "isarray": "1", "arraylenvar": "NUM_PRED", "meaning": "Array of Predictors", "element": codebooks}
+            for predictor_array in self.predictor_arrays
         ]
-      }
-    }
 
-  @classmethod
-  def from_dict(cls, data: dict):
-    self = cls()
+        return {
+            "address": str(self.offset), "name": f"{self.name} [{self.index}]",
+            "struct": {
+                "name": "ALADPCMBook", "NUM_PRED": str(self.num_predictors),
+                "field": [
+                    {"name": "Order", "datatype": "int32", "ispointer": "0", "isarray": "0", "meaning": "None", "value": str(self.order)},
+                    {"name": "Number of Predictors", "datatype": "int32", "ispointer": "0", "isarray": "0", "meaning": "NUM_PRED", "value": str(self.num_predictors)},
+                    {"name": "Codebook", "datatype": "ALADPCMPredictor", "ispointer": "0", "isarray": "1", "arraylenvar": "NUM_PRED", "meaning": "Array of Predictors", "element": codebooks}
+                ]
+            }
+        }
 
-    self.order = data['order']
-    self.num_predictors = data['num_predictors']
-    self.predictor_arrays = data['predictor_arrays']
+    @classmethod
+    def from_dict(cls, data: dict):
+        self = cls()
 
-    return self
+        self.order = data['order']
+        self.num_predictors = data['num_predictors']
+        self.predictor_arrays = data['predictor_arrays']
 
-  def to_bytes(self) -> bytes:
-    raw = struct.pack('>2i', self.order, self.num_predictors)
-    for array in self.predictor_arrays:
-      if len(array) != 16:
-        raise ValueError() # Too few prediction coefficients in the array
+        return self
 
-      raw += struct.pack('>16h', *array)
+    def to_bytes(self) -> bytes:
+        raw = struct.pack('>2i', self.order, self.num_predictors)
+        for array in self.predictor_arrays:
+            if len(array) != 16:
+                raise ValueError() # Too few prediction coefficients in the array
 
-    return add_padding_to_16(raw)
+            raw += struct.pack('>16h', *array)
 
-  @classmethod
-  def from_yaml(cls, codebook_dict: dict):
-    # Basically the same as from the XML dictionary
-    self = cls()
+        return add_padding_to_16(raw)
 
-    self.order = codebook_dict['order']
-    self.num_predictors = codebook_dict['NUM_PREDICTORS']
-    self.predictor_arrays = codebook_dict['predictors']
+    @classmethod
+    def from_yaml(cls, codebook_dict: dict):
+        # Basically the same as from the XML dictionary
+        self = cls()
 
-    if len(self.predictor_arrays) != self.num_predictors:
-      raise ValueError() # Must have same number of arrays as there are predictors
+        self.order = codebook_dict['order']
+        self.num_predictors = codebook_dict['NUM_PREDICTORS']
+        self.predictor_arrays = codebook_dict['predictors']
 
-    for pred in self.predictor_arrays:
-      if len(pred) != 16:
-        raise ValueError() # Must have 16 predictors
+        if len(self.predictor_arrays) != self.num_predictors:
+            raise ValueError() # Must have same number of arrays as there are predictors
 
-    return self
+        for pred in self.predictor_arrays:
+            if len(pred) != 16:
+                raise ValueError() # Must have 16 predictors
 
-  def to_yaml(self) -> dict:
-    data = {
-      "name": f"{self.name} [{self.index}]",
-      "order": self.order,
-      "NUM_PREDICTORS": self.num_predictors
-    }
+        return self
 
-    predictors = []
-    for array in self.predictor_arrays:
-      predictors.append(FlowStyleList(array))
+    def to_yaml(self) -> dict:
+        data = {
+            "name": f"{self.name} [{self.index}]",
+            "order": self.order,
+            "NUM_PREDICTORS": self.num_predictors
+        }
 
-    data['predictors'] = predictors
+        predictors = []
+        for array in self.predictor_arrays:
+            predictors.append(FlowStyleList(array))
 
-    return data
+        data['predictors'] = predictors
 
-  @property
-  def struct_size(self) -> int:
-    return align_to_16(8 + (8 * self.order * self.num_predictors))
+        return data
+
+    @property
+    def struct_size(self) -> int:
+        return align_to_16(8 + (8 * self.order * self.num_predictors))
 
 if __name__ == '__main__':
-  pass
+    pass

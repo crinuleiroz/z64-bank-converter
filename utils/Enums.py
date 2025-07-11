@@ -30,54 +30,63 @@ Intended Usage:
 
 from enum import *
 
-# XML Tag enum
-class XMLTags(Enum):
-  ABINDEXENTRY = 'abindexentry'
-  ABHEADER     = 'abheader'
-  ABBANK       = 'abbank'
-  ABDRUMLIST   = 'abdrumlist'
-  ABSFXLIST    = 'absfxlist'
-  INSTRUMENTS  = 'instruments'
-  DRUMS        = 'drums'
-  ENVELOPES    = 'envelopes'
-  SAMPLES      = 'samples'
-  ALADPCMLOOPS = 'aladpcmloops'
-  ALADPCMBOOKS = 'aladpcmbooks'
 
-# Audio sample enums
+class XMLTags(Enum):
+    ABINDEXENTRY = 'abindexentry'
+    ABHEADER = 'abheader'
+    ABBANK = 'abbank'
+    ABDRUMLIST = 'abdrumlist'
+    ABSFXLIST = 'absfxlist'
+    INSTRUMENTS = 'instruments'
+    DRUMS = 'drums'
+    ENVELOPES = 'envelopes'
+    SAMPLES = 'samples'
+    ALADPCMLOOPS = 'aladpcmloops'
+    ALADPCMBOOKS = 'aladpcmbooks'
+
+
 class AudioSampleCodec(IntEnum):
-  CODEC_ADPCM       = 0
-  CODEC_S8          = 1
-  CODEC_S16_INMEM   = 2
-  CODEC_SMALL_ADPCM = 3
-  CODEC_REVERB      = 4
-  CODEC_S16         = 5
+    ADPCM = 0
+    S8 = 1
+    S16_INMEM = 2
+    SMALL_ADPCM = 3
+    REVERB = 4
+    S16 = 5
+
 
 class AudioStorageMedium(IntEnum):
-  MEDIUM_RAM        = 0
-  MEDIUM_UNK        = 1
-  MEDIUM_CART       = 2
-  MEDIUM_DISK_DRIVE = 3
+    RAM = 0
+    UNK = 1
+    CART = 2
+    DISK_DRIVE = 3
+    RAM_UNLOADDED = 5
 
-# Sequence pLayer ID enum
-class SequencePlayerID(IntEnum):
-  EFFECTS      = 0
-  FANFARES     = 1
-  BGM          = 2
-  BGM_AMBIENCE = 2 # OOT alias
-  CUTSCENES    = 3
-  AMBIENCE     = 4 # MM-only
 
-# Soundfont ID enum
-class SoundfontID(IntEnum):
-  DEFAULT = 255
+class CacheLoadType(IntEnum):
+    PERMANENT = 0
+    PERSISTENT = 1
+    TEMPORARY = 2
+    EITHER = 3
+    EITHER_NOSYNC = 4
 
-# Envelope opcodes enum
+
+class SampleBankID(IntEnum):
+    SAMPLE_BANK_0 = 0
+    SAMPLE_BANK_1 = 1
+    SAMPLE_BANK_2 = 2
+    SAMPLE_BANK_3 = 3
+    SAMPLE_BANK_4 = 4
+    SAMPLE_BANK_5 = 5
+    SAMPLE_BANK_6 = 6
+    NO_SAMPLE_BANK = 255
+
+
 class EnvelopeOpcodes(IntEnum):
-  ADSR_DISABLE =  0
-  ADSR_HANG    = -1
-  ADSR_GOTO    = -2
-  ADSR_RESTART = -3
+    DISABLE = 0
+    HANG = -1
+    GOTO = -2
+    RESTART = -3
+
 
 if __name__ == '__main__':
-  pass
+    pass
