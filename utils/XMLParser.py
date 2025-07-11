@@ -63,9 +63,9 @@ def parse_abindexentry(element):
         "address": int(fields[0].attrib["value"]),
         "size": int(fields[1].attrib["value"]),
         "medium": int(fields[2].attrib["value"]),
-        "seq_player": int(fields[3].attrib["value"]),
-        "table_id": int(fields[4].attrib["value"]),
-        "font_id": int(fields[5].attrib["value"]),
+        "cache_load_type": int(fields[3].attrib["value"]),
+        "table_id_1": int(fields[4].attrib["value"]),
+        "table_id_2": int(fields[5].attrib["value"]),
         "num_instruments": int(fields[6].attrib["value"]),
         "num_drums": int(fields[7].attrib["value"]),
         "num_effects": int(fields[8].attrib["value"])
