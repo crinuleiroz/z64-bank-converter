@@ -256,7 +256,7 @@ MM_SAMPLE_NAMES: dict[int, str] = {
     # Sample Bank 2 @538CC0
     0x538CC0: 'Bent Conga:C072:AT02',
     0x53B200: 'perc:CONGA:MUTE:AT02',
-    0x54D4C0: 'perc:CONGA:SLAP:AT02',
+    0x53D4C0: 'perc:CONGA:SLAP:AT02',
     0x53FF90: 'Cuica:OPEN:AT02',
     0x540830: 'Cuica:MUTE:AT02',
     0x5412F0: 'Reverb Marimba:A057:AT02',
